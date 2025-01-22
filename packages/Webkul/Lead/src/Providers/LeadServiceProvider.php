@@ -15,7 +15,11 @@ class LeadServiceProvider extends ServiceProvider
     public function boot(Router $router)
     {
         $this->loadMigrationsFrom(__DIR__.'/../Database/Migrations');
+        if ($this->app->runningInConsole()) {
+            $this->loadFactoriesFrom(__DIR__ . '/../Database/Factories');
+        }
     }
+
 
     /**
      * Register services.
@@ -23,4 +27,6 @@ class LeadServiceProvider extends ServiceProvider
      * @return void
      */
     public function register() {}
+
+    
 }

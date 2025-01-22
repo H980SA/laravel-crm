@@ -4,6 +4,7 @@ namespace Webkul\Lead\Models;
 
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Webkul\Activity\Models\ActivityProxy;
 use Webkul\Activity\Traits\LogsActivity;
 use Webkul\Attribute\Traits\CustomAttribute;
@@ -13,16 +14,27 @@ use Webkul\Lead\Contracts\Lead as LeadContract;
 use Webkul\Quote\Models\QuoteProxy;
 use Webkul\Tag\Models\TagProxy;
 use Webkul\User\Models\UserProxy;
+use Webkul\Lead\Database\Factories\LeadFactory;
 
 class Lead extends Model implements LeadContract
 {
-    use CustomAttribute, LogsActivity;
+    use CustomAttribute, LogsActivity,HasFactory;
 
     protected $casts = [
         'closed_at'           => 'datetime',
         'expected_close_date' => 'date',
     ];
 
+     /**
+     * Sobrescribir el método newFactory para especificar la factory del modelo.
+     *
+     * @return LeadFactory
+     */
+    protected static function newFactory()
+    {
+        return LeadFactory::new();
+    }
+    
     /**
      * The attributes that are appended.
      *
