@@ -1910,6 +1910,7 @@ return [
                 'total-quotations'      => 'Total de Cotizaciones',
                 'total-persons'         => 'Total de Personas',
                 'total-organizations'   => 'Total de Organizaciones',
+                'total-gantts'        => 'Total de Gantt',
             ],
 
             'total-leads' => [

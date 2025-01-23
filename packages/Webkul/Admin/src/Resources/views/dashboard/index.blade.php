@@ -46,7 +46,8 @@
 
             <!-- Over All Stats -->
             @include('admin::dashboard.index.over-all')
-
+            <!-- Total Gantts Stats -->
+            @include('admin::dashboard.index.total-gantts')
             <!-- Total Leads Stats -->
             @include('admin::dashboard.index.total-leads')
 

@@ -61,7 +61,7 @@
                 
                         options: {
                             aspectRatio: this.aspectRatio,
-                            
+                            responsive:true,
                             plugins: {
                                 legend: {
                                     display: false

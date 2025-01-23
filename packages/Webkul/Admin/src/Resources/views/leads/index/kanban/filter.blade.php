@@ -21,6 +21,11 @@
             width="350px"
             ref="kanbanFilterDrawer"
         >
+                    width="50px"
+            ref="kanbanFilterDrawer"
+        >
+
+
             <!-- Drawer Toggler -->
             <x-slot:toggle>
                 {!! view_render_event('admin.leads.index.kanban.filter.drawer.toggle_button.before') !!}
