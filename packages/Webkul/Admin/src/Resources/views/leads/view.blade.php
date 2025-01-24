@@ -103,6 +103,8 @@
             <!-- Stages Navigation -->
             @include ('admin::leads.view.stages')
 
+
+
             <!-- Activities -->
             {!! view_render_event('admin.leads.view.activities.before', ['lead' => $lead]) !!}
 
@@ -113,6 +115,7 @@
                     ['name' => 'description', 'label' => trans('admin::app.leads.view.tabs.description')],
                     ['name' => 'products', 'label' => trans('admin::app.leads.view.tabs.products')],
                     ['name' => 'quotes', 'label' => trans('admin::app.leads.view.tabs.quotes')],
+                    ['name' => 'metrics', 'label' => 'Metricas'],
                 ]"
             >
                 <!-- Products -->
@@ -130,6 +133,10 @@
                     <div class="p-4 dark:text-white">
                         {{ $lead->description }}
                     </div>
+                </x-slot>
+
+                <x-slot:metrics>
+                    @include ('admin::leads.view.metrics')
                 </x-slot>
             </x-admin::activities>
 

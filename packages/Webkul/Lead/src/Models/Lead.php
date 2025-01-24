@@ -153,6 +153,10 @@ class Lead extends Model implements LeadContract
         return $this->belongsToMany(TagProxy::modelClass(), 'lead_tags');
     }
 
+    public function metrics()
+    {
+        return $this->hasOne(Metric::class);
+    }
     /**
      * Returns the rotten days
      */
