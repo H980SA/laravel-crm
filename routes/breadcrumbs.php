@@ -421,3 +421,9 @@ Breadcrumbs::for('dashboard.account.edit', function (BreadcrumbTrail $trail, $us
     $trail->parent('dashboard');
     $trail->push(trans('admin::app.account.edit.title'), route('admin.user.account.edit', $user->id));
 });
+
+// Dashboard > Gantt
+Breadcrumbs::for('gantt', function (BreadcrumbTrail $trail) {
+    $trail->parent('dashboard');
+    $trail->push(trans('admin::app.layouts.gantt'), route('admin.gantt.index'));
+});

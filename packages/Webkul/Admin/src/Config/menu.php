@@ -100,6 +100,17 @@ return [
     ],
 
     /**
+     * Gantt.
+     */
+    [
+        'key'        => 'gantt',
+        'name'       => 'admin::app.layouts.gantt',
+        'route'      => 'admin.gantt.index',
+        'sort'       => 6,
+        'icon-class' => 'icon-calendar',
+    ],
+
+    /**
      * Contacts.
      */
     [
@@ -140,7 +151,7 @@ return [
         'key'        => 'settings',
         'name'       => 'admin::app.layouts.settings',
         'route'      => 'admin.settings.index',
-        'sort'       => 8,
+        'sort'       => 9,
         'icon-class' => 'icon-setting',
     ], [
         'key'        => 'settings.user',
@@ -270,7 +281,7 @@ return [
         'key'        => 'configuration',
         'name'       => 'admin::app.layouts.configuration',
         'route'      => 'admin.configuration.index',
-        'sort'       => 9,
+        'sort'       => 10,
         'icon-class' => 'icon-configuration',
     ],
 ];

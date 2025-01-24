@@ -125,7 +125,7 @@ return [
         'key'   => 'activities.delete',
         'name'  => 'admin::app.acl.delete',
         'route' => ['admin.activities.delete', 'admin.activities.mass_delete'],
-        'sort'  => 3,
+        'sort'  => 4,
     ], [
         'key'   => 'contacts',
         'name'  => 'admin::app.acl.contacts',
@@ -452,5 +452,11 @@ return [
         'name'  => 'admin::app.acl.configuration',
         'route' => 'admin.configuration.index',
         'sort'  => 9,
+    ],
+    [
+        'key'   => 'gantt',
+        'name'  => 'admin::app.acl.gantt',
+        'route' => 'admin.gantt.index',
+        'sort'  => 6,
     ],
 ];
