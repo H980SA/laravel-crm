@@ -1,94 +1,323 @@
-<div id="three-wrapper">
-    <div class="three-container" style="width: 100%; height: 500px;"></div>
-</div>
-
-<script type="module">
-    import * as THREE from 'https://unpkg.com/three@0.126.1/build/three.module.js';
-
-    import { OrbitControls } from 'https://unpkg.com/three@0.126.1/examples/jsm/controls/OrbitControls.js';
-
-    const container = document.querySelector('#three-wrapper .three-container');
-
-    if (container) {
-        // Crear la escena, cámara y renderizador
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({
-            alpha: true, // Fondo transparente
-            antialias: true, // Mejora la calidad visual
+<div id="three-wrapper" style="position: relative;">
+    <!-- Título estilo "Pipeline MUR" -->
+    <div id="pipelineTitle" style="
+      position: absolute;
+      top: 10px; left: 50%;
+      transform: translateX(-50%);
+      font-size: 24px;
+      font-weight: bold;
+      color: #fff;
+      z-index: 10;
+      pointer-events: none;
+    ">
+      Pipeline MUR
+    </div>
+  
+    <div class="three-container" style="
+      width: 100%;
+      height: 500px;
+      border: 1px solid #ddd;
+      position: relative;
+      background-color: #202020; /* fondo oscuro */
+    "></div>
+  </div>
+  
+  <script type="module">
+    import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js';
+  
+    // Etiquetas para las secciones
+    const labelsData = [
+      { label: '0. Búsqueda Oportunidades (Prospección)' },
+      { label: '1. Recepción de invitación y evaluar participación' },
+      { label: '2. Visita de campo y contactos' },
+      { label: '3. Consultas & Respuestas' },
+      { label: '4. Preparación, Revisión interna, Presentación' },
+      { label: '5. Ajuste, Revisión final (Cierre)' },
+      { label: '6. Revisión y Aprendizaje Post-Licitación' },
+    ];
+  
+    setTimeout(() => {
+      const container = document.querySelector('#three-wrapper .three-container');
+      if (!container) {
+        console.error('No se encontró el contenedor');
+        return;
+      }
+  
+      // ============= ESCENA THREE.JS =============
+      const scene = new THREE.Scene();
+  
+      const camera = new THREE.PerspectiveCamera(
+        75,
+        container.clientWidth / container.clientHeight,
+        0.1,
+        1000
+      );
+      camera.position.z = 15;
+      camera.position.y = 5;
+      camera.rotation.x = -0.3;
+  
+      const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+      renderer.setSize(container.clientWidth, container.clientHeight);
+      container.appendChild(renderer.domElement);
+  
+      // Luces
+      const pointLight = new THREE.PointLight(0xffffff, 1, 100);
+      pointLight.position.set(10, 10, 10);
+      scene.add(pointLight);
+  
+      const ambientLight = new THREE.AmbientLight(0x404040);
+      scene.add(ambientLight);
+  
+      // Raycaster y mouse
+      const raycaster = new THREE.Raycaster();
+      const mouse = new THREE.Vector2();
+  
+      // ========== PARÁMETROS PARA CONO ==========
+      const colors = [
+        0x00ff00, 0x0099ff, 0x66ccff,
+        0xffff00, 0xff9900, 0xff0000,
+        0x800080
+      ];
+      const startRadius = 5;
+      const endRadius = 0.5;
+      const totalLength = 20;
+      const numSections = colors.length;
+      const gap = 0.2;
+      const totalGap = gap * (numSections - 1);
+      const effectiveLength = totalLength - totalGap;
+      const sectionLength = effectiveLength / numSections;
+  
+      function lightenColor(hex, factor = 1.3) {
+        const color = new THREE.Color(hex);
+        color.multiplyScalar(factor);
+        return color.getHex();
+      }
+  
+      // ========== CREAR SECCIONES DEL CONO ==========
+      const sections = [];
+      for (let i = 0; i < numSections; i++) {
+        const r1 = startRadius - ((startRadius - endRadius) / numSections) * i;
+        const r2 = startRadius - ((startRadius - endRadius) / numSections) * (i + 1);
+  
+        // Tronco de cono con tapas
+        const geometry = new THREE.CylinderGeometry(r2, r1, sectionLength, 32, 1, false);
+        const material = new THREE.MeshStandardMaterial({ color: colors[i], flatShading: true });
+        const section = new THREE.Mesh(geometry, material);
+  
+        section.userData = {
+          originalColor: colors[i],
+          hovered: false,
+          basePosition: new THREE.Vector3(),
+          currentOffsetY: 0,
+          targetOffsetY: 0,
+          offsetHoverY: 2,
+          currentScale: 1,
+          targetScale: 1,
+          scaleHover: 1.1,
+          label: labelsData[i]?.label || `Sección ${i}`,
+        };
+  
+        // Posición en X (acostado)
+        const posX = -(totalLength / 2) + i * (sectionLength + gap) + sectionLength / 2;
+        section.position.set(posX, 0, 0);
+        section.rotation.z = -Math.PI / 2;
+        section.userData.basePosition.copy(section.position);
+  
+        scene.add(section);
+        sections.push(section);
+      }
+  
+      // ========== FLECHA 3D CON ESFERA EN LA PUNTA ==========
+      // Aquí creamos un "grupo" para agrupar el shaft (cilindro) y la punta (esfera).
+      {
+        const arrowGroup = new THREE.Group();
+  
+        // 1) "Shaft" => un cilindro colocado a lo largo del eje X
+        const arrowLength = 3;  // largo de la flecha
+        const shaftGeo = new THREE.CylinderGeometry(0.1, 0.1, arrowLength, 16);
+        const shaftMat = new THREE.MeshStandardMaterial({ color: 0x0000ff });
+        const shaftMesh = new THREE.Mesh(shaftGeo, shaftMat);
+  
+        // El cilindro se construye a lo largo del eje Y por defecto.
+        // Giramos -90° en Z para que quede sobre X.
+        shaftMesh.rotation.z = -Math.PI / 2;
+  
+        // Movemos el cilindro para que la base arranque en x=0
+        // y la punta termine en x=arrowLength
+        shaftMesh.position.x = arrowLength / 2;
+        arrowGroup.add(shaftMesh);
+  
+        // 2) Esfera en la punta
+        const tipGeo = new THREE.SphereGeometry(0.3, 16, 16);
+        const tipMesh = new THREE.Mesh(tipGeo, shaftMat);
+        tipMesh.position.x = arrowLength;  // la punta, final
+        arrowGroup.add(tipMesh);
+  
+        // 3) Ubicamos este grupo en la escena
+        //   - x: un poco más allá del final del cono => (totalLength/2)+0.5
+        //   - y: 5 o 6 para que quede "por arriba" del cono
+        arrowGroup.position.set((totalLength / 2) + 0.5, 6, 0);
+  
+        // Si quieres agrandarlo un poco:
+        arrowGroup.scale.set(1.5, 1.5, 1.5);
+  
+        scene.add(arrowGroup);
+      }
+  
+      // ========== CREAR OVERLAYS (FLECHAS Y LABELS 2D) PARA HOVER ==========
+      // (Igual que tu ejemplo anterior)
+      const overlays = sections.map((section, idx) => {
+        const overlayDiv = document.createElement('div');
+        overlayDiv.style.position = 'absolute';
+        overlayDiv.style.top = '0';
+        overlayDiv.style.left = '0';
+        overlayDiv.style.width = '0';
+        overlayDiv.style.height = '0';
+        overlayDiv.style.pointerEvents = 'none';
+        overlayDiv.style.display = 'none';
+  
+        const svgNS = 'http://www.w3.org/2000/svg';
+        const arrowLine = document.createElementNS(svgNS, 'svg');
+        arrowLine.setAttribute('width', '200');
+        arrowLine.setAttribute('height', '200');
+        arrowLine.style.overflow = 'visible';
+  
+        const line = document.createElementNS(svgNS, 'line');
+        line.setAttribute('x1', '0');
+        line.setAttribute('y1', '0');
+        line.setAttribute('x2', '100');
+        line.setAttribute('y2', '0');
+        line.setAttribute('stroke', 'blue');
+        line.setAttribute('stroke-width', '2');
+  
+        const defs = document.createElementNS(svgNS, 'defs');
+        const marker = document.createElementNS(svgNS, 'marker');
+        marker.setAttribute('id', `arrow-marker-${idx}`);
+        marker.setAttribute('markerWidth', '10');
+        marker.setAttribute('markerHeight', '10');
+        marker.setAttribute('refX', '5');
+        marker.setAttribute('refY', '2');
+        marker.setAttribute('orient', 'auto');
+        marker.setAttribute('markerUnits', 'strokeWidth');
+  
+        const arrowPath = document.createElementNS(svgNS, 'path');
+        arrowPath.setAttribute('d', 'M0,0 L0,4 L4,2 z');
+        arrowPath.setAttribute('fill', 'blue');
+        marker.appendChild(arrowPath);
+        defs.appendChild(marker);
+        arrowLine.appendChild(defs);
+  
+        line.setAttribute('marker-end', `url(#arrow-marker-${idx})`);
+        arrowLine.appendChild(line);
+        overlayDiv.appendChild(arrowLine);
+  
+        const labelBox = document.createElement('div');
+        labelBox.style.position = 'absolute';
+        labelBox.style.top = '0';
+        labelBox.style.left = '0';
+        labelBox.style.width = '180px';
+        labelBox.style.backgroundColor = 'rgba(255, 255, 255, 0.8)';
+        labelBox.style.border = '1px solid #ccc';
+        labelBox.style.padding = '5px';
+        labelBox.style.borderRadius = '4px';
+        labelBox.style.fontFamily = 'sans-serif';
+        labelBox.style.fontSize = '12px';
+  
+        labelBox.innerHTML = section.userData.label;
+        overlayDiv.appendChild(labelBox);
+  
+        container.appendChild(overlayDiv);
+  
+        return { overlayDiv, arrowLine, line, labelBox };
+      });
+  
+      // ========== MOUSEMOVE PARA DETECTAR HOVER ==========
+      container.addEventListener('mousemove', (event) => {
+        const rect = container.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+  
+        mouse.x = (x / container.clientWidth) * 2 - 1;
+        mouse.y = -(y / container.clientHeight) * 2 + 1;
+  
+        raycaster.setFromCamera(mouse, camera);
+        const intersects = raycaster.intersectObjects(sections);
+  
+        sections.forEach((s) => {
+          s.userData.hovered = false;
+          s.material.color.setHex(s.userData.originalColor);
         });
+  
+        if (intersects.length > 0) {
+          const sectionHover = intersects[0].object;
+          sectionHover.userData.hovered = true;
+          const bright = lightenColor(sectionHover.userData.originalColor, 1.4);
+          sectionHover.material.color.setHex(bright);
+        }
+      });
+  
+      // ========== ANIMACIÓN ==========
+      function animate() {
+        requestAnimationFrame(animate);
+  
+        sections.forEach((section, i) => {
+          const ud = section.userData;
+          if (ud.hovered) {
+            ud.targetOffsetY = ud.offsetHoverY;
+            ud.targetScale = ud.scaleHover;
+            section.rotation.x += 0.03;
+          } else {
+            ud.targetOffsetY = 0;
+            ud.targetScale = 1;
+          }
+          // Lerp en Y
+          ud.currentOffsetY = THREE.MathUtils.lerp(ud.currentOffsetY, ud.targetOffsetY, 0.1);
+          section.position.y = ud.basePosition.y + ud.currentOffsetY;
+  
+          // Lerp de la escala
+          ud.currentScale = THREE.MathUtils.lerp(ud.currentScale, ud.targetScale, 0.1);
+          section.scale.set(ud.currentScale, ud.currentScale, ud.currentScale);
+  
+          // Posicionar las flechas y labels 2D
+          const worldPos = new THREE.Vector3().setFromMatrixPosition(section.matrixWorld);
+          worldPos.project(camera);
+          const screenX = (worldPos.x * 0.5 + 0.5) * container.clientWidth;
+          const screenY = (-worldPos.y * 0.5 + 0.5) * container.clientHeight;
+  
+          const overlay = overlays[i];
+          if (ud.hovered) {
+            overlay.overlayDiv.style.display = 'block';
+  
+            // offset para que la etiqueta salga a la derecha
+            const offsetLabelX = 120;
+            const offsetLabelY = -40;
+            overlay.overlayDiv.style.left = screenX + 'px';
+            overlay.overlayDiv.style.top = screenY + 'px';
+  
+            overlay.line.setAttribute('x1', '0');
+            overlay.line.setAttribute('y1', '0');
+            overlay.line.setAttribute('x2', offsetLabelX);
+            overlay.line.setAttribute('y2', offsetLabelY);
+  
+            overlay.labelBox.style.left = (offsetLabelX - 10) + 'px';
+            overlay.labelBox.style.top = (offsetLabelY - 20) + 'px';
+          } else {
+            overlay.overlayDiv.style.display = 'none';
+          }
+        });
+  
+        renderer.render(scene, camera);
+      }
+      animate();
+  
+      // Resize
+      window.addEventListener('resize', onWindowResize);
+      function onWindowResize() {
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
         renderer.setSize(container.clientWidth, container.clientHeight);
-        container.appendChild(renderer.domElement);
-
-        // Configurar la luz
-        const light = new THREE.PointLight(0xffffff, 1, 100);
-        light.position.set(10, 10, 10);
-        scene.add(light);
-
-        // Crear el cubo
-        const geometry = new THREE.BoxGeometry();
-        const material = new THREE.MeshStandardMaterial({ color: 0xffffff });
-        const cube = new THREE.Mesh(geometry, material);
-        scene.add(cube);
-
-        // Configurar la posición de la cámara
-        camera.position.z = 5;
-
-        // Controles de órbita opcionales
-        const controls = new OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
-        controls.dampingFactor = 0.05;
-
-        // Animación
-        const animate = () => {
-            cube.rotation.x += 0.01;
-            cube.rotation.y += 0.01;
-
-            controls.update(); // Actualizar controles
-            renderer.render(scene, camera);
-            requestAnimationFrame(animate);
-        };
-
-        // Listener para evitar liberación de recursos
-        let animationFrameId;
-        const startAnimation = () => {
-            if (!animationFrameId) {
-                animationFrameId = requestAnimationFrame(animate);
-            }
-        };
-
-        const stopAnimation = () => {
-            if (animationFrameId) {
-                cancelAnimationFrame(animationFrameId);
-                animationFrameId = null;
-            }
-        };
-
-        document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'visible') {
-                startAnimation();
-            } else {
-                stopAnimation();
-            }
-        });
-
-        // Iniciar animación
-        startAnimation();
-
-        // Limpieza de recursos al cerrar
-        window.addEventListener('beforeunload', () => {
-            stopAnimation();
-            renderer.dispose();
-            controls.dispose();
-        });
-
-        // Ajuste de tamaño en cambio de ventana
-        window.addEventListener('resize', () => {
-            camera.aspect = container.clientWidth / container.clientHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(container.clientWidth, container.clientHeight);
-        });
-    } else {
-        console.error('Contenedor no encontrado.');
-    }
-</script>
+      }
+  
+    }, 500);
+  </script>
+  

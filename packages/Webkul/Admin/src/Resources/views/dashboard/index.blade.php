@@ -42,6 +42,8 @@
 
         <div class="flex flex-1 flex-col gap-4 max-xl:flex-auto">
 
+           
+            <!-- Incluye el componente de Three.js -->
             @include('admin::dashboard.index.three_example')
             <!-- Revenue Stats -->
             @include('admin::dashboard.index.revenue')

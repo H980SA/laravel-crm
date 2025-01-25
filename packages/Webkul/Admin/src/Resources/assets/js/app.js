@@ -123,7 +123,9 @@ import VueCal from "./plugins/vue-cal";
  */
 import Debounce from "./directives/debounce";
 import DOMPurify from "./directives/dompurify";
+import ThreeCube from './components/ThreeCube.vue';
 
+app.component('ThreeCube', ThreeCube);
 app.directive("debounce", Debounce);
 app.directive("safe-html", DOMPurify);
 
