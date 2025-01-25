@@ -18,7 +18,7 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::group(['middleware' => ['web', 'admin', 'admin.auth']], function () {
+Route::group(['middleware' => ['web', 'user']], function () {
     Route::prefix(config('app.admin_path'))->group(function () {
         Route::get('/gantt', [GanttController::class, 'index'])->name('admin.gantt.index');
     });
