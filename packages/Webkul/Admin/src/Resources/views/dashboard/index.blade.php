@@ -41,6 +41,8 @@
         {!! view_render_event('admin.dashboard.index.content.left.before') !!}
 
         <div class="flex flex-1 flex-col gap-4 max-xl:flex-auto">
+
+            @include('admin::dashboard.index.three_example')
             <!-- Revenue Stats -->
             @include('admin::dashboard.index.revenue')
 

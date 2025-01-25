@@ -21,6 +21,7 @@
         "dompurify": "^3.1.7",
         "flatpickr": "^4.6.13",
         "mitt": "^3.0.1",
+        "three": "^0.172.0",
         "vee-validate": "^4.9.1",
         "vue-cal": "^4.9.0",
         "vue-flatpickr": "^2.3.0",

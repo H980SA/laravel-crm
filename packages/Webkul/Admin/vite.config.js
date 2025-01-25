@@ -36,6 +36,13 @@ export default defineConfig(({ mode }) => {
             }),
         ],
 
+        resolve: {
+            alias: {
+                '@': path.resolve(__dirname, 'src/Resources/assets/js'),
+                three: path.resolve(__dirname, 'node_modules/three'),
+            },
+        },
+
         experimental: {
             renderBuiltUrl(filename, { hostId, hostType, type }) {
                 if (hostType === "css") {
