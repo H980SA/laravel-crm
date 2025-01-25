@@ -345,6 +345,6 @@
         camera.updateProjectionMatrix();
         renderer.setSize(container.clientWidth, container.clientHeight);
       }
-    }, 500);
+    }, 1000);
   </script>
   
