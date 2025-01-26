@@ -53,6 +53,19 @@ class LeadController extends Controller
      */
     public function index()
     {
+        $initial_filters= [
+            'initial_filters'=> [
+                'columns'=>[],
+            ]
+        ];
+
+        
+
+        if (request()->has('initial_filters.columns')){
+            $initial_filters['initial_filters']['columns'] = request('initial_filters.columns');
+        }
+
+
         if (request()->ajax()) {
             return datagrid(LeadDataGrid::class)->process();
         }
@@ -63,7 +76,9 @@ class LeadController extends Controller
             $pipeline = $this->pipelineRepository->getDefaultPipeline();
         }
 
+
         return view('admin::leads.index', [
+            'initial_filters' => $initial_filters,
             'pipeline' => $pipeline,
             'columns'  => $this->getKanbanColumns(),
         ]);

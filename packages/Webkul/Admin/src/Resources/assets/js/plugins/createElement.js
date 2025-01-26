@@ -1,4 +1,4 @@
-import { h, resolveComponent } from "vue/dist/vue.esm-bundler";
+import { h, resolveComponent } from "vue";
 
 export default {
     install(app) {

@@ -936,6 +936,7 @@
             },
 
             mounted() {
+
                 this.filters.columns = this.getAppliedColumns();
 
                 this.savedFilters.params.filters.columns = JSON.parse(JSON.stringify(this.filters.columns));

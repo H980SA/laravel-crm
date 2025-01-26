@@ -7,6 +7,7 @@
 ])
 
 <v-datagrid {{ $attributes }}>
+    
     {{ $slot }}
 </v-datagrid>
 
@@ -85,7 +86,7 @@
         app.component('v-datagrid', {
             template: '#v-datagrid-template',
 
-            props: ['src'],
+            props: ['src', 'initialFilters'],
 
             data() {
                 return {
@@ -173,6 +174,7 @@
                  * @returns {void}
                  */
                 boot() {
+                    
                     let datagrids = this.getDatagrids();
 
                     const urlParams = new URLSearchParams(window.location.search);
@@ -194,7 +196,7 @@
                             this.applied.filters = currentDatagrid.applied.filters;
 
                             this.applied.savedFilterId = currentDatagrid.applied.savedFilterId;
-
+                            
                             if (urlParams.has('search')) {
                                 let searchAppliedColumn = this.applied.filters.columns.find(column => column.index === 'all');
 

@@ -256,9 +256,15 @@
           
        
           const leadId = clickedSection.userData.leadId;
+          if(leadId===1){
+            window.location.href = `/admin/leads?view_type=table&initial_filters[columns][0][index]=stage&initial_filters[columns][0][value]=8`;;
+          }
+          else{
+              window.location.href = `/admin/leads/view/${leadId}`;
+
+          }
           
  
-          window.location.href = `/admin/leads/view/${leadId}`;
         }
       });
   
@@ -314,16 +320,16 @@
             overlay.overlayDiv.style.left = screenX + 'px';
             overlay.overlayDiv.style.top  = screenY + 'px';
   
-        
-            overlay.line.setAttribute('x1', '0');
-            overlay.line.setAttribute('y1', '0');
-            overlay.line.setAttribute('x2', offsetLabelX);
-            overlay.line.setAttribute('y2', offsetLabelY);
-  
-           
-            overlay.circle.setAttribute('cx', offsetLabelX + 5);
-            overlay.circle.setAttribute('cy', offsetLabelY);
-  
+                    
+            // Queremos que (0,0) sea el texto, y (offsetLabelX, offsetLabelY) sea el objeto
+            overlay.line.setAttribute('x1', offsetLabelX);
+            overlay.line.setAttribute('y1', offsetLabelY);
+            overlay.line.setAttribute('x2', 0);
+            overlay.line.setAttribute('y2', 0);
+
+            // La esfera ahora la pones en el extremo del CONO, no del texto
+            overlay.circle.setAttribute('cx', 0);
+            overlay.circle.setAttribute('cy', 0);
             
             overlay.labelBox.style.left = (offsetLabelX - 10) + 'px';
             overlay.labelBox.style.top  = (offsetLabelY - 20) + 'px';

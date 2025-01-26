@@ -5,7 +5,7 @@
         {!! view_render_event('admin.leads.index.kanban.toolbar.search.before') !!}
 
         <!-- Search Panel -->
-        @include('admin::leads.index.kanban.search')
+        @include('admin::leads.index.kanban.search') 
 
         {!! view_render_event('admin.leads.index.kanban.toolbar.search.after') !!}
 
