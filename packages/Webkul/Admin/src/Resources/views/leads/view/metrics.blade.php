@@ -13,6 +13,12 @@
                 <div class="space-y-4" v-if="!isEditing">
                     <div class="flex justify-between">
                         <span class="text-gray-600 dark:text-gray-300">
+                            @lang('admin::app.leads.view.metrics.etapa_licitacion')
+                        </span>
+                        <span class="font-semibold dark:text-white">@{{ metrics.etapa_licitacion }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600 dark:text-gray-300">
                             @lang('admin::app.leads.view.metrics.capacidad_financiera')
                         </span>
                         <span class="font-semibold dark:text-white">@{{ metrics.capacidad_financiera }}</span>
@@ -86,6 +92,24 @@
     
                 <!-- Formulario para editar métricas -->
                 <form v-else @submit.prevent="updateMetrics">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            @lang('admin::app.leads.view.metrics.etapa_licitacion')
+                        </label>
+                        <select v-model="metrics.etapa_licitacion" 
+                                class="w-full border rounded px-2 py-1 dark:bg-gray-800 dark:text-white" 
+                                required>
+                            <option value=1>El cliente evalúa propuesta</option>
+                            <option value=2>Short List</option>
+                            <option value=3>Adjudicado</option>
+                            <option value=4>El cliente declara en STAND BY</option>
+                            <option value=5>El cliente declara en DESIERTO</option>
+                            <option value=6>MUR retira la oferta</option>
+                            <option value=7>MUR no presenta oferta</option>
+                            <option value=8>NO Adjudicado</option>
+                        </select>
+                    </div>
+
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                             @lang('admin::app.leads.view.metrics.capacidad_financiera')
@@ -175,6 +199,25 @@
                 <form @submit.prevent="createMetrics">
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            @lang('admin::app.leads.view.metrics.etapa_licitacion')
+                        </label>
+                        <select v-model="newMetrics.etapa_licitacion" 
+                                class="w-full border rounded px-2 py-1 dark:bg-gray-800 dark:text-white" 
+                                required>
+                            <option value="" disabled selected>@lang('admin::app.leads.view.metrics.select_etapa')</option>
+                            <option value=1>El cliente evalúa propuesta</option>
+                            <option value=2>Short List</option>
+                            <option value=3>Adjudicado</option>
+                            <option value=4>El cliente declara en STAND BY</option>
+                            <option value=5>El cliente declara en DESIERTO</option>
+                            <option value=6>MUR retira la oferta</option>
+                            <option value=7>MUR no presenta oferta</option>
+                            <option value=8>NO Adjudicado</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                             @lang('admin::app.leads.view.metrics.capacidad_financiera')
                         </label>
                         <input type="number" v-model="newMetrics.capacidad_financiera" min="0" max="10"
@@ -250,6 +293,9 @@
                     </button>
                 </form>
             </template>
+        </div>
+        <div style = "color:red; " >
+        {{"Aca ira las probabilidades de ganar"}}
         </div>
     </script>
     

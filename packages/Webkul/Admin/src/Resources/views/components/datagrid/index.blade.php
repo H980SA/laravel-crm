@@ -7,11 +7,13 @@
 ])
 
 <v-datagrid {{ $attributes }}>
-    
     {{ $slot }}
 </v-datagrid>
 
 @pushOnce('scripts')
+    <script>
+        const savedFiltersUrl = "{{ route('admin.datagrid.saved_filters.index') }}";
+    </script>
     <script
         type="text/x-template"
         id="v-datagrid-template"
@@ -176,6 +178,7 @@
                 boot() {
                     
                     let datagrids = this.getDatagrids();
+                    
 
                     const urlParams = new URLSearchParams(window.location.search);
 
@@ -192,8 +195,28 @@
                             this.applied.pagination = currentDatagrid.applied.pagination;
 
                             this.applied.sort = currentDatagrid.applied.sort;
+                            
+                            axios.get(savedFiltersUrl, {
+                                params: {
+                                    src: this.src, // Ajusta este valor según lo que necesites enviar
+                                },
+                            })
+                            .then(response => {
+                                
+
+                                // Utiliza la respuesta
+                                const savedFilters = response.data.data;
+                                console.log('Filtros guardados:', savedFilters);
+                                const initial_saved_filter_id = parseInt(this.initialFilters,10)
+                                
+                                this.applySavedFilter(savedFilters[initial_saved_filter_id])
+                            })
+                            .catch(error => {
+                                console.error('Error al obtener los filtros:', error);
+                            });
 
                             this.applied.filters = currentDatagrid.applied.filters;
+                            
 
                             this.applied.savedFilterId = currentDatagrid.applied.savedFilterId;
                             
@@ -204,7 +227,7 @@
                             }
 
                             this.get();
-
+                            
                             return;
                         }
                     }

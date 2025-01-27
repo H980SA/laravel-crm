@@ -50,6 +50,13 @@ class SavedFilterController extends Controller
             'src'     => request()->get('src'),
             'user_id' => auth()->guard()->user()->id,
         ]);
+    
+        if ($filterId = request()->get('initialFilter')) {
+            $savedFilter = $savedFilters->where('id', $filterId)->first();
+    
+            return response()->json(['data' => $savedFilter]);
+        }
+    
 
         return response()->json(['data' => $savedFilters]);
     }

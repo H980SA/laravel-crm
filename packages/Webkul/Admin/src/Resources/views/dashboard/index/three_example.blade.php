@@ -29,12 +29,12 @@
     
     const leadsData = [
       { id: 1, label: '0. Búsqueda Oportunidades (Prospección)' },
-      { id: 2, label: '1. Recepción de invitación y evaluar participación' },
-      { id: 3, label: '2. Visita de campo y contactos' },
-      { id: 4, label: '3. Consultas & Respuestas' },
-      { id: 5, label: '4. Preparación, Revisión interna, Presentación' },
-      { id: 6, label: '5. Ajuste, Revisión final (Cierre)' },
-      { id: 7, label: '6. Revisión y Aprendizaje Post-Licitación' },
+      { id: 5, label: '1. Recepción de invitación y evaluar participación' },
+      { id: 6, label: '2. Visita de campo y contactos' },
+      { id: 2, label: '3. Consultas & Respuestas' },
+      { id: 4, label: '4. Preparación, Revisión interna, Presentación' },
+      { id: 0, label: '5. Ajuste, Revisión final (Cierre)' },
+      { id: 3, label: '6. Revisión y Aprendizaje Post-Licitación' },
     ];
   
     setTimeout(() => {
@@ -256,13 +256,10 @@
           
        
           const leadId = clickedSection.userData.leadId;
-          if(leadId===1){
-            window.location.href = `/admin/leads?view_type=table&initial_filters[columns][0][index]=stage&initial_filters[columns][0][value]=8`;;
+          if(leadId){
+            window.location.href = `/admin/leads?view_type=table&initial_filters[columns][0][index]=stage&initial_filters[columns][0][value]=${leadId}`;;
           }
-          else{
-              window.location.href = `/admin/leads/view/${leadId}`;
 
-          }
           
  
         }
