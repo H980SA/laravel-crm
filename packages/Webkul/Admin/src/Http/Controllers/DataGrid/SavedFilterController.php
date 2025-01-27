@@ -46,17 +46,29 @@ class SavedFilterController extends Controller
      */
     public function get()
     {
-        $savedFilters = $this->savedFilterRepository->findWhere([
-            'src'     => request()->get('src'),
-            'user_id' => auth()->guard()->user()->id,
-        ]);
-    
-        if ($filterId = request()->get('initialFilter')) {
-            $savedFilter = $savedFilters->where('id', $filterId)->first();
-    
-            return response()->json(['data' => $savedFilter]);
+        // Verifica qué parámetros están llegando en la solicitud
+        $src = request()->get('src');
+        $userId = auth()->guard()->user()->id;
+
+        // Imprime los valores para asegurarte de que sean correctos
+        if (!$src) {
+            return response()->json(['error' => 'El parámetro src está vacío'], 400);
         }
-    
+
+        if (!$userId) {
+            return response()->json(['error' => 'No se pudo obtener el user_id'], 400);
+        }
+
+        // Intenta recuperar los filtros
+        $savedFilters = $this->savedFilterRepository->findWhere([
+            'src'     => $src,
+            'user_id' => $userId,
+        ]);
+
+        // Imprime los resultados para asegurarte de que la consulta está funcionando
+        if ($savedFilters->isEmpty()) {
+            return response()->json(['error' => 'No se encontraron filtros guardados', 'src' => $src, 'user_id' => $userId], 404);
+        }
 
         return response()->json(['data' => $savedFilters]);
     }

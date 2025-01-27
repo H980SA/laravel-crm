@@ -13,6 +13,7 @@
 @pushOnce('scripts')
     <script>
         const savedFiltersUrl = "{{ route('admin.datagrid.saved_filters.index') }}";
+        console.log(savedFiltersUrl);
     </script>
     <script
         type="text/x-template"
@@ -196,6 +197,7 @@
 
                             this.applied.sort = currentDatagrid.applied.sort;
                             
+                            console.log('src:', this.src);
                             axios.get(savedFiltersUrl, {
                                 params: {
                                     src: this.src, // Ajusta este valor según lo que necesites enviar
@@ -203,7 +205,7 @@
                             })
                             .then(response => {
                                 
-
+                                console.log('Respuesta:', response.data);
                                 // Utiliza la respuesta
                                 const savedFilters = response.data.data;
                                 console.log('Filtros guardados:', savedFilters);

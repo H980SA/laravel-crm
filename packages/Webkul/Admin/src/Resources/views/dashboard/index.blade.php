@@ -45,6 +45,9 @@
            
             <!-- Incluye el componente de Three.js -->
             @include('admin::dashboard.index.three_example')
+            <div class="flex gap-4">
+                <x-admin::charts.probability-chart :value="0.5"></x-admin::charts.probability_chart>
+            </div>
             <!-- Revenue Stats -->
             @include('admin::dashboard.index.revenue')
 

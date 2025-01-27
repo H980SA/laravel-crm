@@ -122,6 +122,43 @@ class MetricController extends Controller
 
         $lead = $this->leadRepository->findOrFail($leadId);
 
+        $etapaLicitacion = $validated['etapa_licitacion'];
+        $capacidadFinanciera = $validated['capacidad_financiera'];
+        $capacidadTecnica = $validated['capacidad_tecnica'];
+        $inteligenciaPrecios = $validated['inteligencia_precios'];
+        $experienciaServicios = $validated['experiencia_servicios'];
+        $reputacionMur = $validated['reputacion_mur'];
+        $conocimientoCostos = $validated['conocimiento_costos'];
+        $cumplimientoNorma = $validated['cumplimiento_norma'];
+        $relacionCliente = $validated['relacion_cliente'];
+        $innovacion = $validated['innovacion'];
+
+        $weights = [
+            'capacidad_financiera'   => 12,
+            'capacidad_tecnica'      => 10,
+            'inteligencia_precios'   => 8,
+            'experiencia_servicios'  => 12,
+            'reputacion_mur'         => 8,
+            'conocimiento_costos'    => 9,
+            'cumplimiento_norma'     => 8,
+            'relacion_cliente'       => 8,
+            'innovacion'             => 8,
+            'etapa_licitacion'       => 17, 
+        ];
+
+        $probabilidadExito = (
+            ($etapaLicitacion * $weights['etapa_licitacion'] / 10)+
+            ($capacidadFinanciera * $weights['capacidad_financiera'] / 10) +
+            ($capacidadTecnica * $weights['capacidad_tecnica'] / 10) +
+            ($inteligenciaPrecios* $weights['inteligencia_precios'] / 10) +
+            ($experienciaServicios * $weights['experiencia_servicios'] / 10) +
+            ($reputacionMur * $weights['reputacion_mur'] / 10) +
+            ($conocimientoCostos * $weights['conocimiento_costos'] / 10) +
+            ($cumplimientoNorma * $weights['cumplimiento_norma'] / 10) +
+            ($relacionCliente * $weights['relacion_cliente'] / 10) +
+            ($innovacion * $weights['innovacion'] / 10) 
+        ) / 100;
+
         $metric = $this->metricRepository->findWhere(['lead_id' => $lead->id])->first();
 
         if (!$metric) {
@@ -130,8 +167,9 @@ class MetricController extends Controller
             ], 404);
         }
 
-        $this->metricRepository->update($validated, $metric->id);
-
+        $metric=$this->metricRepository->update(array_merge($validated,
+        ['probabilidad_exito' => $probabilidadExito]), $metric->id);
+       
         return response()->json([
             'message' => 'Metric created successfully.',
             'data'    => $metric,

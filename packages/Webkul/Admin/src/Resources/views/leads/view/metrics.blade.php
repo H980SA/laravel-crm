@@ -294,9 +294,13 @@
                 </form>
             </template>
         </div>
-        <div style = "color:red; " >
-        {{"Aca ira las probabilidades de ganar"}}
+        
+        <div class="flex gap-4 mt-4">
+            <x-admin::charts.probability-chart 
+                ::value="metrics ? metrics.probabilidad_exito : 0"
+            ></x-admin::charts.probability-chart>
         </div>
+        
     </script>
     
     <script type="module">
@@ -331,7 +335,8 @@
                 async updateMetrics() {
                     try {
                         const response = await axios.put(`{{ route('admin.leads.metrics.update', $lead->id) }}`, this.metrics);
-                        alert('Metrics updated successfully!');
+                        this.metrics= response.data.data;
+                        console.log(response.data.data);
                         this.isEditing = false;
                     } catch (error) {
                         alert('Failed to update metrics.');
@@ -340,7 +345,9 @@
                 async createMetrics() {
                     try {
                         const response = await axios.post(`{{ route('admin.leads.metrics.store', $lead->id) }}`, this.newMetrics);
+                        this.isEditing = false;
                         this.metrics = response.data.data[0];
+                        console.log(this.metrics)
                         this.newMetrics = {
                             capacidad_financiera: '',
                             capacidad_tecnica: '',
