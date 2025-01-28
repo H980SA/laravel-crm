@@ -28,10 +28,6 @@ class MetricFactory extends Factory
             'relacion_cliente'       => $this->faker->randomFloat(1,10), // Valores entre 0.00 y 1.00
             'innovacion'             => $this->faker->randomFloat(1,10), // Valores entre 0.00 y 1.00
             'probabilidad_exito'     => $this->faker->randomFloat(1,10), // Valores entre 0.00 y 1.00
-            'estrategia'             => $this->faker->word, // Palabra aleatoria
-            'monto_estimado'         => $this->faker->randomFloat(2, 1000, 100000000), // Valores entre 1,000 y 100,000,000
-            'margen_bruto'           => $this->faker->randomFloat(2, 0, 100), // Valores entre 0.00 y 100.00
-            'capex_estimado'         => $this->faker->randomFloat(2, 1000, 100000000), // Valore
             'lead_id'                => \Webkul\Lead\Models\Lead::factory(), 
         ];
     }

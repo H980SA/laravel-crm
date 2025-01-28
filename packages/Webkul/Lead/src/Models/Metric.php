@@ -20,10 +20,6 @@ class Metric extends Model
         'relacion_cliente',       
         'innovacion',         
         'probabilidad_exito', 
-        'estrategia',            
-        'monto_estimado',       
-        'margen_bruto',          
-        'capex_estimado',  
         'lead_id',
     ];
 

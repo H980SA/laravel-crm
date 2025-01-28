@@ -108,7 +108,7 @@ class MetricController extends Controller
     public function update(Request $request, int $leadId)
     {
         $validated = $request->validate([
-            'etapa_licitacion'       => 'required',
+            'etapa_licitacion'       => 'nullable|numeric|min:0|max:10',
             'capacidad_financiera'   => 'nullable|numeric|min:0|max:10',
             'capacidad_tecnica'      => 'nullable|numeric|min:0|max:10',
             'inteligencia_precios'   => 'nullable|numeric|min:0|max:10',

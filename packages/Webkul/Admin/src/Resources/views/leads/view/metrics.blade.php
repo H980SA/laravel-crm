@@ -96,18 +96,8 @@
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                             @lang('admin::app.leads.view.metrics.etapa_licitacion')
                         </label>
-                        <select v-model="metrics.etapa_licitacion" 
-                                class="w-full border rounded px-2 py-1 dark:bg-gray-800 dark:text-white" 
-                                required>
-                            <option value=1>El cliente evalúa propuesta</option>
-                            <option value=2>Short List</option>
-                            <option value=3>Adjudicado</option>
-                            <option value=4>El cliente declara en STAND BY</option>
-                            <option value=5>El cliente declara en DESIERTO</option>
-                            <option value=6>MUR retira la oferta</option>
-                            <option value=7>MUR no presenta oferta</option>
-                            <option value=8>NO Adjudicado</option>
-                        </select>
+                        <input type="number" v-model="metrics.etapa_licitacion" min="0" max="10"
+                            class="w-full border rounded px-2 py-1 dark:bg-gray-800 dark:text-white" required />
                     </div>
 
                     <div class="mb-4">
@@ -201,19 +191,8 @@
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                             @lang('admin::app.leads.view.metrics.etapa_licitacion')
                         </label>
-                        <select v-model="newMetrics.etapa_licitacion" 
-                                class="w-full border rounded px-2 py-1 dark:bg-gray-800 dark:text-white" 
-                                required>
-                            <option value="" disabled selected>@lang('admin::app.leads.view.metrics.select_etapa')</option>
-                            <option value=1>El cliente evalúa propuesta</option>
-                            <option value=2>Short List</option>
-                            <option value=3>Adjudicado</option>
-                            <option value=4>El cliente declara en STAND BY</option>
-                            <option value=5>El cliente declara en DESIERTO</option>
-                            <option value=6>MUR retira la oferta</option>
-                            <option value=7>MUR no presenta oferta</option>
-                            <option value=8>NO Adjudicado</option>
-                        </select>
+                        <input type="number" v-model="newMetrics.etapa_licitacion" min="0" max="10"
+                            class="w-full border rounded px-2 py-1 dark:bg-gray-800 dark:text-white" required />
                     </div>
 
                     <div class="mb-4">
@@ -311,6 +290,7 @@
                     isEditing: false,
                     metrics: @json($lead->metrics ?? null),
                     newMetrics: {
+                        etapa_licitacion: '',
                         capacidad_financiera: '',
                         capacidad_tecnica: '',
                         inteligencia_precios: '',
@@ -349,6 +329,7 @@
                         this.metrics = response.data.data[0];
                         console.log(this.metrics)
                         this.newMetrics = {
+                            etapa_licitacion: '',
                             capacidad_financiera: '',
                             capacidad_tecnica: '',
                             inteligencia_precios: '',
