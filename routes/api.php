@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\GanttController;
 
 /*
 |--------------------------------------------------------------------------
@@ -16,4 +17,11 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
+});
+
+Route::prefix('gantt')->group(function () {
+    Route::get('/data', [GanttController::class, 'getData']);
+    Route::post('/', [GanttController::class, 'store']);
+    Route::put('/{id}', [GanttController::class, 'update']);
+    Route::delete('/{id}', [GanttController::class, 'destroy']);
 });

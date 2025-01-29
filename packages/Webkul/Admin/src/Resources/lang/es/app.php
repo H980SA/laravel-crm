@@ -2101,4 +2101,11 @@ return [
         'xls'        => 'XLS',
         'xlsx'       => 'XLSX',
     ],
+
+    'gantt' => [
+        'index' => [
+            'title' => 'Diagrama de Gantt',
+            'create-btn' => 'Crear Tarea',
+        ],
+    ],
 ];

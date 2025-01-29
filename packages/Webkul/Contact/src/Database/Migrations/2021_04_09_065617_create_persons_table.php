@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('name');
             $table->json('emails');
             $table->json('contact_numbers')->nullable();
-
+            $table->string('job_title')->nullable();
             $table->integer('organization_id')->unsigned()->nullable();
             $table->foreign('organization_id')->references('id')->on('organizations')->onDelete('cascade');
             $table->timestamps();
