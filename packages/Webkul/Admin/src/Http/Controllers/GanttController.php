@@ -33,8 +33,8 @@ class GanttController extends Controller
                     return [
                         'id' => $licitacion->id,
                         'text' => $licitacion->lead_title ?? $licitacion->text,
-                        'start_date' => Carbon::parse($licitacion->start_date)->format('Y-m-d'),
-                        'end_date' => Carbon::parse($licitacion->end_date)->format('Y-m-d'),
+                        'start_date' => Carbon::parse($licitacion->start_date)->format('Y-m-d H:i'),
+                        'end_date' => Carbon::parse($licitacion->end_date)->format('Y-m-d H:i'),
                         'duration' => Carbon::parse($licitacion->start_date)
                             ->diffInDays(Carbon::parse($licitacion->end_date)) + 1,
                         'progress' => floatval($licitacion->progress),
@@ -54,8 +54,8 @@ class GanttController extends Controller
                     return [
                         'id' => 'task_' . $task->id,
                         'text' => $task->text,
-                        'start_date' => Carbon::parse($task->start_date)->format('Y-m-d'),
-                        'end_date' => Carbon::parse($task->end_date)->format('Y-m-d'),
+                        'start_date' => Carbon::parse($task->start_date)->format('Y-m-d H:i'),
+                        'end_date' => Carbon::parse($task->end_date)->format('Y-m-d H:i'),
                         'duration' => Carbon::parse($task->start_date)
                             ->diffInDays(Carbon::parse($task->end_date)) + 1,
                         'parent' => $task->parent_id,
@@ -96,6 +96,105 @@ class GanttController extends Controller
                 'todayTasks' => [],
                 'error' => 'No se pudieron cargar los datos del diagrama Gantt: ' . $e->getMessage()
             ]);
+        }
+    }
+
+    public function getData()
+    {
+        try {
+            // Obtener las tareas principales (padres) con el título del lead
+            $licitaciones = DB::table('gantts')
+                ->leftJoin('leads', 'gantts.lead_id', '=', 'leads.id')
+                ->where('gantts.is_parent', true)
+                ->select([
+                    'gantts.id',
+                    'gantts.text',
+                    'gantts.start_date',
+                    'gantts.end_date',
+                    'gantts.progress',
+                    'leads.title as lead_title'
+                ])
+                ->get()
+                ->map(function ($licitacion) {
+                    return [
+                        'id' => $licitacion->id,
+                        'text' => $licitacion->lead_title ?? $licitacion->text,
+                        'start_date' => Carbon::parse($licitacion->start_date)->format('Y-m-d H:i'),
+                        'end_date' => Carbon::parse($licitacion->end_date)->format('Y-m-d H:i'),
+                        'duration' => Carbon::parse($licitacion->start_date)
+                            ->diffInDays(Carbon::parse($licitacion->end_date)) + 1,
+                        'progress' => floatval($licitacion->progress),
+                        'open' => true,
+                        'type' => 'project'
+                    ];
+                })
+                ->values()
+                ->toArray();
+
+            // Obtener las subtareas
+            $tasks = DB::table('gantts')
+                ->where('is_parent', false)
+                ->orderBy('start_date')
+                ->get()
+                ->map(function ($task) {
+                    return [
+                        'id' => 'task_' . $task->id,
+                        'text' => $task->text,
+                        'start_date' => Carbon::parse($task->start_date)->format('Y-m-d H:i'),
+                        'end_date' => Carbon::parse($task->end_date)->format('Y-m-d H:i'),
+                        'duration' => Carbon::parse($task->start_date)
+                            ->diffInDays(Carbon::parse($task->end_date)) + 1,
+                        'parent' => $task->parent_id,
+                        'progress' => floatval($task->progress),
+                        'priority' => $task->priority,
+                        'open' => true
+                    ];
+                })
+                ->values()
+                ->toArray();
+
+            return response()->json([
+                'tasks' => array_merge($licitaciones, $tasks)
+            ]);
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function getLicitaciones()
+    {
+        try {
+            $licitaciones = DB::table('gantts')
+                ->leftJoin('leads', 'gantts.lead_id', '=', 'leads.id')
+                ->where('gantts.is_parent', true)
+                ->select([
+                    'gantts.id',
+                    'gantts.text',
+                    'gantts.start_date',
+                    'gantts.end_date',
+                    'gantts.progress',
+                    'leads.title as lead_title'
+                ])
+                ->get()
+                ->map(function ($licitacion) {
+                    return [
+                        'id' => $licitacion->id,
+                        'text' => $licitacion->lead_title ?? $licitacion->text,
+                        'start_date' => Carbon::parse($licitacion->start_date)->format('Y-m-d H:i'),
+                        'end_date' => Carbon::parse($licitacion->end_date)->format('Y-m-d H:i'),
+                        'duration' => Carbon::parse($licitacion->start_date)
+                            ->diffInDays(Carbon::parse($licitacion->end_date)) + 1,
+                        'progress' => floatval($licitacion->progress),
+                        'open' => true,
+                        'type' => 'project'
+                    ];
+                })
+                ->values()
+                ->toArray();
+
+            return response()->json($licitaciones);
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 } 

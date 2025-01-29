@@ -23,3 +23,10 @@ Route::group(['middleware' => ['web', 'user']], function () {
         Route::get('/gantt', [GanttController::class, 'index'])->name('admin.gantt.index');
     });
 });
+
+Route::prefix('admin')->group(function () {
+    Route::prefix('gantt')->group(function () {
+        Route::get('/data', [Webkul\Admin\Http\Controllers\GanttController::class, 'getData']);
+        Route::get('/licitaciones', [Webkul\Admin\Http\Controllers\GanttController::class, 'getLicitaciones']);
+    });
+});
