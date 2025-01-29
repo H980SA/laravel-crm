@@ -44,8 +44,10 @@
 
            
             <!-- Incluye el componente de Three.js -->
-            @include('admin::dashboard.index.three_example')
-
+            
+            @include('admin::dashboard.index.three_example', ['businessLine' => 'IM'])
+            @include('admin::dashboard.index.three_example',['businessLine' => 'M'])
+            @include('admin::dashboard.index.three_example',['businessLine' => 'ST'])
             <!-- Revenue Stats -->
             @include('admin::dashboard.index.revenue')
 

@@ -49,7 +49,41 @@
                     if (this.chart) {
                         this.chart.destroy();
                     }
-                    this.drawGauge();
+                 
+                    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                    
                 }
             },
 

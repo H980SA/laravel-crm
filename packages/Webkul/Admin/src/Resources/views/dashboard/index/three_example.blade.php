@@ -1,6 +1,9 @@
-<div id="three-wrapper" style="position: relative;">
-    <!-- Título estilo "Pipeline MUR" -->
-    <div id="pipelineTitle" style="
+@php
+    $businessLine = $businessLine ?? 'IM';
+@endphp
+
+<div id="three-wrapper-{{ $businessLine }}" style="position: relative;">
+    <div id="pipelineTitle-{{ $businessLine }}" style="
       position: absolute;
       top: 10px; left: 50%;
       transform: translateX(-50%);
@@ -10,37 +13,87 @@
       z-index: 10;
       pointer-events: none;
     ">
-      Pipeline MUR
+      Pipeline {{ $businessLine }}
     </div>
   
-    <!-- Contenedor de Three.js -->
-    <div class="three-container" style="
-      width: 100%;
-      height: 500px;
-      position: relative;
-      border: none;
-      background: none; 
+    <div id="three-container-{{ $businessLine }}" class="three-container" style="
+    width: 100%;
+    height: 500px;
+    position: relative;
+    border: none;
+    background: none; 
     "></div>
   </div>
   
   <script type="module">
     import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js';
   
-    
-    const leadsData = [
-      { id: 1, label: '0. Búsqueda Oportunidades (Prospección)' },
-      { id: 5, label: '1. Recepción de invitación y evaluar participación' },
-      { id: 6, label: '2. Visita de campo y contactos' },
-      { id: 2, label: '3. Consultas & Respuestas' },
-      { id: 4, label: '4. Preparación, Revisión interna, Presentación' },
-      { id: 0, label: '5. Ajuste, Revisión final (Cierre)' },
-      { id: 3, label: '6. Revisión y Aprendizaje Post-Licitación' },
+    const businessLine = "{{ $businessLine }}";    
+    console.log("🔹 Business Line recibida:", businessLine);
+    const savedFiltersUrl = "{{ route('admin.datagrid.saved_filters.index') }}";
+    console.log(savedFiltersUrl);
+    let leadsData = [
+      { id: null, label: '0. Búsqueda Oportunidades (Prospección)' },
+      { id: null, label: '1. Recepción de invitación y evaluar participación' },
+      { id: null, label: '2. Visita de campo y contactos' },
+      { id: null, label: '3. Consultas & Respuestas' },
+      { id: null, label: '4. Preparación, Revisión interna, Presentación' },
+      { id: null, label: '5. Ajuste, Revisión final (Cierre)' },
+      { id: null, label: '6. Revisión y Aprendizaje Post-Licitación' },
     ];
+
+    async function fetchFilters() {
+        try {
+            const src = "http://localhost:8000/admin/leads";  // Asegúrate de que este valor sea correcto
+            console.log("🔍 Enviando src:", src);
+
+            const response = await fetch(`${savedFiltersUrl}?src=${encodeURIComponent(src)}`);
+            const data = await response.json();
+
+            console.log("✅ Respuesta recibida:", data);
+
+            if (!data.data || !Array.isArray(data.data)) {
+                console.error("⚠️ Error: La API no devolvió datos válidos", data);
+                return;
+            }
+
+            console.log("📊 Filtros recibidos:", data.data);
+
+            // Filtrar solo los filtros que coincidan con la línea de negocio (M, ST, IM)
+            const filters = data.data.filter(filter => filter.name.startsWith(businessLine + "-"));
+            console.log(`📌 Filtros de la línea de negocio (${businessLine}):`, filters);
+
+            // Mapear nombres de etapas a IDs de filtros
+            const stageNames = [
+                "Búsqueda-Oportunidades",
+                "RecepciónInvitación",
+                "Visita-Campo-Contactos",
+                "Consultas-Respuestas",
+                "Preparacion-RevisionInterna-Presentacion",
+                "Ajuste-RevisionFinal",
+                "Post-Licitación"
+            ];
+
+            stageNames.forEach((stageName, index) => {
+                const filter = filters.find(f => f.name.includes(stageName));
+                if (filter) {
+                    leadsData[index].id = filter.id;  // Asigna el ID del filtro al leadsData
+                }
+            });
+
+            console.log("✅ Leads Data actualizado:", leadsData);
+
+        } catch (error) {
+            console.error("❌ Error al obtener los filtros:", error);
+        }
+    }
+
+    fetchFilters();
   
     setTimeout(() => {
-      const container = document.querySelector('#three-wrapper .three-container');
+      const container = document.getElementById('three-container-{{ $businessLine }}');
       if (!container) {
-        console.error('No se encontró el contenedor');
+        console.error('No se encontró el contenedor para', "{{ $businessLine }}");
         return;
       }
   
@@ -348,6 +401,6 @@
         camera.updateProjectionMatrix();
         renderer.setSize(container.clientWidth, container.clientHeight);
       }
-    }, 1000);
+    }, 2000);
   </script>
   
