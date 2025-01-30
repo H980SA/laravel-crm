@@ -3,6 +3,9 @@
         @lang('admin::app.gantt.index.title')
     </x-slot>
 
+    <!-- CSRF Token -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
     <gantt-chart></gantt-chart>
 
     @pushOnce('scripts')
@@ -49,7 +52,8 @@
                             end_date: "",
                             progress: 0,
                             parent: "",
-                            type: "task"
+                            type: "task",
+                            priority: "Media"
                         },
                         licitaciones: [],
                         todayTasks: [],
@@ -99,34 +103,66 @@
 
                     async saveTask() {
                         try {
+                            // Validaciones básicas
+                            if (!this.currentTask.text) {
+                                throw new Error("El nombre de la tarea es requerido");
+                            }
+                            if (!this.currentTask.start_date || !this.currentTask.end_date) {
+                                throw new Error("Las fechas son requeridas");
+                            }
+
                             const taskData = {
-                                ...this.currentTask,
+                                text: this.currentTask.text,
+                                start_date: this.currentTask.start_date,
+                                end_date: this.currentTask.end_date,
                                 progress: this.currentTask.progress / 100,
+                                type: this.isCreatingTask ? 'task' : (this.selectedTask.type || 'task'),
+                                parent: this.currentTask.parent || null,
+                                priority: this.currentTask.priority || 'Media'
                             };
 
                             const url = this.isCreatingTask
                                 ? "/api/admin/gantt/tasks"
                                 : `/api/admin/gantt/tasks/${this.selectedTask.id}`;
 
-                            const method = this.isCreatingTask ? "POST" : "PUT";
-
                             const response = await fetch(url, {
-                                method: method,
+                                method: this.isCreatingTask ? "POST" : "PUT",
                                 headers: {
                                     "Content-Type": "application/json",
-                                    "X-CSRF-TOKEN": document.querySelector(
-                                        'meta[name="csrf-token"]'
-                                    ).content,
+                                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,
+                                    "Accept": "application/json"
                                 },
-                                body: JSON.stringify(taskData),
+                                credentials: 'same-origin',
+                                body: JSON.stringify(taskData)
                             });
 
-                            if (!response.ok) throw new Error("Failed to save task");
+                            const result = await response.json();
 
-                            await this.loadData();
-                            this.closeTaskForm();
+                            if (!response.ok) {
+                                throw new Error(result.message || "Error al guardar la tarea");
+                            }
+
+                            if (result.success) {
+                                await this.loadData();
+                                this.closeTaskForm();
+                                
+                                // Mostrar mensaje de éxito usando el sistema de notificaciones de Laravel
+                                if (typeof this.$parent.$root.$refs !== 'undefined' && 
+                                    typeof this.$parent.$root.$refs.notifications !== 'undefined') {
+                                    this.$parent.$root.$refs.notifications.success(
+                                        this.isCreatingTask ? 'Tarea creada exitosamente' : 'Tarea actualizada exitosamente'
+                                    );
+                                }
+                            }
                         } catch (error) {
                             console.error("Error saving task:", error);
+                            // Mostrar error usando el sistema de notificaciones de Laravel
+                            if (typeof this.$parent.$root.$refs !== 'undefined' && 
+                                typeof this.$parent.$root.$refs.notifications !== 'undefined') {
+                                this.$parent.$root.$refs.notifications.error(
+                                    error.message || "Error al guardar la tarea"
+                                );
+                            }
                         }
                     },
 
@@ -142,8 +178,10 @@
                         gantt.config.columns = [
                             {name: "text", label: "Tarea", tree: true, width: '*', min_width: 200},
                             {name: "start_date", label: "Inicio", align: "center", width: 90},
+                            {name: "end_date", label: "Fin", align: "center", width: 90},
                             {name: "duration", label: "Duración", align: "center", width: 60},
-                            {name: "priority", label: "Prioridad", align: "center", width: 80}
+                            {name: "priority", label: "Prioridad", align: "center", width: 80},
+                            {name: "progress", label: "Progreso", align: "center", width: 80}
                         ];
                         
                         gantt.init("gantt_here");
@@ -186,9 +224,27 @@
                     },
 
                     selectTask(taskId) {
-                        this.selectedTask = gantt.getTask(taskId);
-                        this.currentTask = { ...this.selectedTask };
+                        const task = gantt.getTask(taskId);
+                        this.selectedTask = task;
+                        
+                        // Formatear las fechas al formato YYYY-MM-DD que espera el input type="date"
+                        this.currentTask = {
+                            ...task,
+                            start_date: this.formatDateForInput(task.start_date),
+                            end_date: this.formatDateForInput(task.end_date),
+                            progress: Math.round(task.progress * 100) // Convertir el progreso a porcentaje
+                        };
+                        
                         this.isCreatingTask = false;
+                    },
+
+                    // Agregar este método helper para formatear las fechas
+                    formatDateForInput(date) {
+                        const d = new Date(date);
+                        const year = d.getFullYear();
+                        const month = String(d.getMonth() + 1).padStart(2, '0');
+                        const day = String(d.getDate()).padStart(2, '0');
+                        return `${year}-${month}-${day}`;
                     },
 
                     updateTodayTasks() {
