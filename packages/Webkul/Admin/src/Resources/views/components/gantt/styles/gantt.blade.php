@@ -211,4 +211,58 @@
     width: 1.25rem;
     height: 1.25rem;
 }
+
+/* Estilos de los botones */
+.button-group {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 1.5rem;
+}
+
+.button-group button {
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.button-group button.cancel {
+    background-color: #f3f4f6;
+    color: #374151;
+}
+
+.button-group button.save {
+    background-color: #2563eb;
+    color: white;
+}
+
+.button-group button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.button-group button:not(:disabled).cancel:hover {
+    background-color: #e5e7eb;
+}
+
+.button-group button:not(:disabled).save:hover {
+    background-color: #1d4ed8;
+}
+
+/* Animación de loading */
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
 </style> 

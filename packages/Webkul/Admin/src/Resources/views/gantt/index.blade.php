@@ -57,7 +57,8 @@
                         },
                         licitaciones: [],
                         todayTasks: [],
-                        scale: 'week'
+                        scale: 'week',
+                        isSaving: false
                     }
                 },
 
@@ -103,6 +104,9 @@
 
                     async saveTask() {
                         try {
+                            if (this.isSaving) return;
+                            this.isSaving = true;
+                            
                             // Validaciones básicas
                             if (!this.currentTask.text) {
                                 throw new Error("El nombre de la tarea es requerido");
@@ -146,7 +150,6 @@
                                 await this.loadData();
                                 this.closeTaskForm();
                                 
-                                // Mostrar mensaje de éxito usando el sistema de notificaciones de Laravel
                                 if (typeof this.$parent.$root.$refs !== 'undefined' && 
                                     typeof this.$parent.$root.$refs.notifications !== 'undefined') {
                                     this.$parent.$root.$refs.notifications.success(
@@ -156,13 +159,14 @@
                             }
                         } catch (error) {
                             console.error("Error saving task:", error);
-                            // Mostrar error usando el sistema de notificaciones de Laravel
                             if (typeof this.$parent.$root.$refs !== 'undefined' && 
                                 typeof this.$parent.$root.$refs.notifications !== 'undefined') {
                                 this.$parent.$root.$refs.notifications.error(
                                     error.message || "Error al guardar la tarea"
                                 );
                             }
+                        } finally {
+                            this.isSaving = false;
                         }
                     },
 
