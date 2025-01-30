@@ -50,4 +50,5 @@
     .selected-row {
         background-color: rgba(59, 130, 246, 0.1);
     }
+
 </style>

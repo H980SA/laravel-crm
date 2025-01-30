@@ -3,23 +3,39 @@
         @lang('admin::app.gantt.index.title')
     </x-slot>
 
-    <div id="gantt-app" v-cloak>
-        <div class="flex gap-4 max-w-full">
-            <!-- Gantt Section -->
-            @include('admin::components.gantt.main-section')
-
-            <!-- Sidebar -->
-            @include('admin::components.gantt.sidebar')
-        </div>
-    </div>
+    <gantt-chart></gantt-chart>
 
     @pushOnce('scripts')
-        <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
         <script src="https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.js"></script>
         <script type="text/javascript">
-            new Vue({
-                el: "#gantt-app",
+            // Definir el componente
+            const ganttApp = {
+                template: `
+                    <div class="flex gap-4 max-w-full">
+                        <!-- Gantt Section -->
+                        <div class="flex-1">
+                            <div class="flex flex-col gap-4">
+                                <!-- Header Section -->
+                                @include('admin::components.gantt.header')
 
+                                <!-- Gantt Component -->
+                                <div class="bg-white dark:bg-gray-900 rounded-lg shadow-sm">
+                                    <!-- Scale Controls -->
+                                    @include('admin::components.gantt.scale-controls')
+                                    
+                                    <!-- Gantt Container -->
+                                    <div class="relative">
+                                        <div id="gantt_here" style="width:100%; height:600px; overflow: hidden;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sidebar -->
+                        @include('admin::components.gantt.sidebar')
+                    </div>
+                `,
+                
                 data() {
                     return {
                         isLoading: false,
@@ -42,94 +58,15 @@
                 },
 
                 mounted() {
+                    console.log('Componente montado');
                     this.initGantt();
                     this.loadLicitaciones();
                     this.updateTodayTasks();
                 },
 
                 methods: {
-                    initGantt() {
-                        // Configuración inicial del Gantt
-                        gantt.config.xml_date = "%Y-%m-%d %H:%i";
-                        gantt.config.date_format = "%Y-%m-%d %H:%i";
-                        
-                        // Configuración de la escala
-                        gantt.config.scale_height = 60;
-                        gantt.config.row_height = 35;
-                        gantt.config.task_height = 20;
-                        gantt.config.grid_width = 380;
-                        gantt.config.autosize = "y";
-                        
-                        // Configuración de columnas
-                        gantt.config.columns = [
-                            {name: "text", label: "Tarea", tree: true, width: '*', min_width: 200},
-                            {name: "start_date", label: "Inicio", align: "center", width: 90},
-                            {name: "duration", label: "Duración", align: "center", width: 60},
-                            {name: "priority", label: "Prioridad", align: "center", width: 80}
-                        ];
-                        
-                        // Configuración de la escala de tiempo
-                        gantt.config.scales = [
-                            {unit: "year", step: 1, format: "%Y"},
-                            {unit: "month", step: 1, format: "%F"},
-                            {unit: "day", step: 1, format: "%j", css: function(date) {
-                                if(date.getDay() === 0 || date.getDay() === 6) return "weekend";
-                            }}
-                        ];
-
-                        // Configuración de fechas límite
-                        gantt.config.start_date = new Date(2025, 0, 1);
-                        gantt.config.end_date = new Date(2025, 11, 31);
-
-                        // Inicializar el Gantt
-                        gantt.init("gantt_here");
-
-                        // Cargar datos
-                        this.loadData();
-
-                        // Eventos
-                        gantt.attachEvent("onTaskClick", (id) => {
-                            this.selectTask(id);
-                            return true;
-                        });
-                    },
-
-                    async loadData() {
-                        try {
-                            this.isLoading = true;
-                            const response = await fetch("/admin/gantt/data");
-                            const data = await response.json();
-                            
-                            if (data.tasks) {
-                                this.tasks = data.tasks;
-                                gantt.clearAll();
-                                gantt.parse({data: this.tasks});
-                                gantt.render();
-                            }
-                        } catch (error) {
-                            console.error("Error loading Gantt data:", error);
-                        } finally {
-                            this.isLoading = false;
-                        }
-                    },
-
-                    async loadLicitaciones() {
-                        try {
-                            const response = await fetch("/admin/gantt/licitaciones");
-                            const data = await response.json();
-                            this.licitaciones = data || [];
-                        } catch (error) {
-                            console.error("Error loading licitaciones:", error);
-                        }
-                    },
-
-                    selectTask(taskId) {
-                        this.selectedTask = gantt.getTask(taskId);
-                        this.currentTask = { ...this.selectedTask };
-                        this.isCreatingTask = false;
-                    },
-
                     startNewTask() {
+                        console.log("Iniciando nueva tarea");
                         const today = new Date();
                         const tomorrow = new Date(today);
                         tomorrow.setDate(tomorrow.getDate() + 1);
@@ -144,6 +81,7 @@
                             parent: "",
                             type: "task"
                         };
+                        console.log('Estado después de startNewTask:', { isCreatingTask: this.isCreatingTask, currentTask: this.currentTask });
                     },
 
                     closeTaskForm() {
@@ -192,11 +130,72 @@
                         }
                     },
 
+                    initGantt() {
+                        gantt.config.xml_date = "%Y-%m-%d %H:%i";
+                        gantt.config.date_format = "%Y-%m-%d %H:%i";
+                        gantt.config.scale_height = 60;
+                        gantt.config.row_height = 35;
+                        gantt.config.task_height = 20;
+                        gantt.config.grid_width = 380;
+                        gantt.config.autosize = "y";
+                        
+                        gantt.config.columns = [
+                            {name: "text", label: "Tarea", tree: true, width: '*', min_width: 200},
+                            {name: "start_date", label: "Inicio", align: "center", width: 90},
+                            {name: "duration", label: "Duración", align: "center", width: 60},
+                            {name: "priority", label: "Prioridad", align: "center", width: 80}
+                        ];
+                        
+                        gantt.init("gantt_here");
+                        this.loadData();
+
+                        gantt.attachEvent("onTaskClick", (id) => {
+                            this.selectTask(id);
+                            return true;
+                        });
+                    },
+
+                    async loadData() {
+                        try {
+                            this.isLoading = true;
+                            const response = await fetch("/admin/gantt/data");
+                            const data = await response.json();
+                            
+                            if (data.tasks) {
+                                this.tasks = data.tasks;
+                                gantt.clearAll();
+                                gantt.parse({data: this.tasks});
+                                gantt.render();
+                                this.updateTodayTasks();
+                            }
+                        } catch (error) {
+                            console.error("Error loading Gantt data:", error);
+                        } finally {
+                            this.isLoading = false;
+                        }
+                    },
+
+                    async loadLicitaciones() {
+                        try {
+                            const response = await fetch("/admin/gantt/licitaciones");
+                            const data = await response.json();
+                            this.licitaciones = data || [];
+                        } catch (error) {
+                            console.error("Error loading licitaciones:", error);
+                        }
+                    },
+
+                    selectTask(taskId) {
+                        this.selectedTask = gantt.getTask(taskId);
+                        this.currentTask = { ...this.selectedTask };
+                        this.isCreatingTask = false;
+                    },
+
                     updateTodayTasks() {
                         const today = new Date();
                         today.setHours(0, 0, 0, 0);
 
-                        this.todayTasks = this.tasks.filter((task) => {
+                        this.todayTasks = this.tasks.filter(task => {
                             const taskDate = new Date(task.start_date);
                             taskDate.setHours(0, 0, 0, 0);
                             return taskDate.getTime() === today.getTime();
@@ -205,85 +204,19 @@
 
                     formatDate(dateStr) {
                         return new Date(dateStr).toLocaleDateString();
-                    },
-
-                    // Add scale change method
-                    changeView(value) {
-                        this.scale = value;
-                        this.setScale(value);
-                    },
-
-                    // Add scale setting method
-                    setScale(value) {
-                        switch (value) {
-                            case 'day':
-                                gantt.config.scales = [
-                                    {unit: "year", step: 1, format: "%Y"},
-                                    {unit: "month", step: 1, format: "%F"},
-                                    {unit: "day", step: 1, format: "%j"}
-                                ];
-                                break;
-                            case 'week':
-                                gantt.config.scales = [
-                                    {unit: "year", step: 1, format: "%Y"},
-                                    {unit: "month", step: 1, format: "%F"},
-                                    {unit: "week", step: 1, format: "Semana #%W"}
-                                ];
-                                break;
-                            case 'month':
-                                gantt.config.scales = [
-                                    {unit: "year", step: 1, format: "%Y"},
-                                    {unit: "month", step: 1, format: "%F"},
-                                    {unit: "week", step: 1, format: "Sem #%W"}
-                                ];
-                                break;
-                        }
-                        gantt.render();
-                    },
+                    }
                 }
+            };
+
+            // Registrar el componente en la aplicación principal
+            window.addEventListener("load", function() {
+                app.component('gantt-chart', ganttApp);
             });
         </script>
-        @include('admin::components.gantt.scripts')
     @endPushOnce
 
     @pushOnce('styles')
         <link rel="stylesheet" href="https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.css">
-        <style>
-            .gantt_task_line {
-                border-radius: 3px;
-            }
-            
-            .gantt_task_line.gantt_project {
-                background-color: #3498db;
-                border-color: #2980b9;
-            }
-            
-            .gantt_task_line.weekend {
-                background-color: #f1c40f;
-            }
-            
-            .gantt_grid_scale,
-            .gantt_task_scale {
-                background-color: #f8f9fa;
-                color: #2c3e50;
-            }
-            
-            .gantt_grid_data .gantt_cell {
-                border-right: 1px solid #eee;
-            }
-            
-            .gantt_task_cell.weekend {
-                background-color: #f8f9fa;
-            }
-            
-            .gantt_task_row.gantt_selected {
-                background-color: #e8f5fe;
-            }
-            
-            .gantt_task_line.gantt_selected {
-                box-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
-            }
-        </style>
-        @include('admin::components.gantt.styles.styles')
+        @include('admin::components.gantt.styles.gantt')
     @endPushOnce
 </x-admin::layouts>

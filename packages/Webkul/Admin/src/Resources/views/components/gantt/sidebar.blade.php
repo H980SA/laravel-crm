@@ -3,24 +3,29 @@
         <div v-if="selectedTask || isCreatingTask" class="task-form">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-lg font-medium">@{{ isCreatingTask ? 'Nueva Tarea' : 'Editar Tarea' }}</h3>
-                <button @click="closeTaskForm" class="text-gray-400 hover:text-gray-600">&times;</button>
+                <button @click="closeTaskForm" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
             </div>
 
             <div class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nombre</label>
+                    <label class="block text-sm font-medium">Nombre</label>
                     <input 
                         type="text" 
                         v-model="currentTask.text"
-                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        placeholder="Nombre de la tarea"
+                        class="mt-1"
                     >
                 </div>
 
                 <div v-if="isCreatingTask">
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Licitación</label>
+                    <label class="block text-sm font-medium">Licitación</label>
                     <select 
                         v-model="currentTask.parent"
-                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        class="mt-1"
                     >
                         <option value="">Seleccione una licitación</option>
                         <option v-for="lic in licitaciones" :key="lic.id" :value="lic.id">
@@ -31,38 +36,44 @@
 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Fecha Inicio</label>
+                        <label class="block text-sm font-medium">Fecha Inicio</label>
                         <input 
                             type="date" 
                             v-model="currentTask.start_date"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                            class="mt-1"
                         >
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Fecha Fin</label>
+                        <label class="block text-sm font-medium">Fecha Fin</label>
                         <input 
                             type="date" 
                             v-model="currentTask.end_date"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                            class="mt-1"
                         >
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Progreso (%)</label>
+                    <label class="block text-sm font-medium">Progreso (%)</label>
                     <input 
                         type="number" 
                         v-model.number="currentTask.progress"
                         min="0"
                         max="100"
-                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        class="mt-1"
                     >
                 </div>
 
-                <div class="flex justify-end">
+                <div class="button-group">
+                    <button 
+                        @click="closeTaskForm"
+                        class="cancel"
+                    >
+                        Cancelar
+                    </button>
                     <button 
                         @click="saveTask"
-                        class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                        class="save"
                     >
                         @{{ isCreatingTask ? 'Crear Tarea' : 'Actualizar Tarea' }}
                     </button>
@@ -75,39 +86,42 @@
             <button 
                 type="button"
                 @click="startNewTask"
-                class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                class="new-task-button"
             >
-                + Nueva Tarea
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+                Nueva Tarea
             </button>
         </div>
 
         <!-- Today's Tasks -->
-        <div class="mt-8">
-            <h3 class="text-lg font-medium mb-4">Tareas de Hoy</h3>
+        <div class="today-tasks">
+            <h3>Tareas de Hoy</h3>
             <div v-if="todayTasks && todayTasks.length" class="space-y-4">
                 <div 
                     v-for="task in todayTasks" 
                     :key="task.id"
-                    class="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                    class="task-card"
                 >
-                    <div class="flex justify-between items-start mb-2">
-                        <h4 class="font-medium">@{{ task.text }}</h4>
-                        <span class="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
+                    <div class="task-header">
+                        <h4 class="task-title">@{{ task.text }}</h4>
+                        <span class="task-type">
                             @{{ task.type === 'project' ? 'Licitación' : 'Tarea' }}
                         </span>
                     </div>
-                    <div class="text-sm text-gray-500">
+                    <div class="task-dates">
                         <div>Inicio: @{{ formatDate(task.start_date) }}</div>
                         <div>Fin: @{{ formatDate(task.end_date) }}</div>
                     </div>
-                    <div class="mt-2">
-                        <div class="w-full bg-gray-200 rounded-full h-2.5">
-                            <div 
-                                class="bg-blue-600 h-2.5 rounded-full" 
-                                :style="{ width: (task.progress * 100) + '%' }"
-                            ></div>
-                        </div>
-                        <div class="text-right text-xs mt-1">@{{ Math.round(task.progress * 100) }}%</div>
+                    <div class="progress-bar">
+                        <div 
+                            class="progress-value" 
+                            :style="{ width: (task.progress * 100) + '%' }"
+                        ></div>
+                    </div>
+                    <div class="text-right text-xs mt-1 text-gray-500">
+                        @{{ Math.round(task.progress * 100) }}%
                     </div>
                 </div>
             </div>
