@@ -290,7 +290,8 @@ class GanttController extends Controller
                 'start_date' => 'required|date',
                 'end_date' => 'required|date|after_or_equal:start_date',
                 'progress' => 'required|numeric|min:0|max:1',
-                'type' => 'required|string|in:task,project'
+                'type' => 'required|string|in:task,project',
+                'priority' => 'nullable|string|in:Alta,Media,Baja'
             ]);
 
             // Remover el prefijo 'task_' si existe
@@ -308,6 +309,7 @@ class GanttController extends Controller
                     'start_date' => $data['start_date'],
                     'end_date' => $data['end_date'],
                     'progress' => $data['progress'],
+                    'priority' => $data['priority'] ?? 'Media',
                     'updated_at' => now()
                 ]);
 
@@ -321,6 +323,7 @@ class GanttController extends Controller
                 'start_date' => Carbon::parse($data['start_date'])->format('Y-m-d H:i'),
                 'end_date' => Carbon::parse($data['end_date'])->format('Y-m-d H:i'),
                 'progress' => floatval($data['progress']),
+                'priority' => $data['priority'] ?? 'Media',
                 'type' => $data['type']
             ];
 

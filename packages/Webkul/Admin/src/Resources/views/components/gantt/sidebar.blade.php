@@ -2,7 +2,7 @@
     <div class="bg-white dark:bg-gray-900 rounded-lg shadow-sm p-4">
         <div v-if="selectedTask || isCreatingTask" class="task-form">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-medium">@{{ isCreatingTask ? 'Nueva Tarea' : 'Editar Tarea' }}</h3>
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white">@{{ isCreatingTask ? 'Nueva Tarea' : 'Editar Tarea' }}</h3>
                 <button @click="closeTaskForm" class="text-gray-400 hover:text-gray-600 transition-colors">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -56,12 +56,28 @@
                 <div>
                     <label class="block text-sm font-medium">Progreso (%)</label>
                     <input 
-                        type="number" 
+                        type="range" 
                         v-model.number="currentTask.progress"
                         min="0"
                         max="100"
-                        class="mt-1"
+                        step="10"
+                        class="mt-1 w-full"
                     >
+                    <div class="text-right text-sm text-gray-600 dark:text-gray-400">
+                        @{{ currentTask.progress }}%
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium">Prioridad</label>
+                    <select 
+                        v-model="currentTask.priority"
+                        class="mt-1 w-full"
+                    >
+                        <option value="Alta">Alta</option>
+                        <option value="Media">Media</option>
+                        <option value="Baja">Baja</option>
+                    </select>
                 </div>
 
                 <div class="button-group">
@@ -92,8 +108,8 @@
             </div>
         </div>
         <div v-else class="text-center py-8">
-            <h3 class="text-lg font-medium mb-2">Gestión de Tareas</h3>
-            <p class="text-gray-500 mb-4">Selecciona una tarea para editar o crea una nueva</p>
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Gestión de Tareas</h3>
+            <p class="text-gray-500 dark:text-gray-400 mb-4">Selecciona una tarea para editar o crea una nueva</p>
             <button 
                 type="button"
                 @click="startNewTask"
@@ -108,7 +124,7 @@
 
         <!-- Today's Tasks -->
         <div class="today-tasks">
-            <h3>Tareas de Hoy</h3>
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Tareas de Hoy</h3>
             <div v-if="todayTasks && todayTasks.length" class="space-y-4">
                 <div 
                     v-for="task in todayTasks" 

@@ -84,9 +84,9 @@
                             end_date: tomorrow.toISOString().split("T")[0],
                             progress: 0,
                             parent: "",
-                            type: "task"
+                            type: "task",
+                            priority: "Media"
                         };
-                        console.log('Estado después de startNewTask:', { isCreatingTask: this.isCreatingTask, currentTask: this.currentTask });
                     },
 
                     closeTaskForm() {
@@ -113,6 +113,9 @@
                             }
                             if (!this.currentTask.start_date || !this.currentTask.end_date) {
                                 throw new Error("Las fechas son requeridas");
+                            }
+                            if (this.currentTask.progress < 0 || this.currentTask.progress > 100) {
+                                throw new Error("El progreso debe estar entre 0 y 100");
                             }
 
                             const taskData = {
@@ -170,6 +173,41 @@
                         }
                     },
 
+                    setScale(value) {
+                        this.scale = value;
+                        
+                        switch (value) {
+                            case 'day':
+                                gantt.config.scale_unit = 'month';
+                                gantt.config.date_scale = '%F, %Y';
+                                gantt.config.subscales = [
+                                    {unit: 'day', step: 1, date: '%d %M'}
+                                ];
+                                gantt.config.min_column_width = 80;
+                                break;
+                                
+                            case 'week':
+                                gantt.config.scale_unit = 'month';
+                                gantt.config.date_scale = '%F, %Y';
+                                gantt.config.subscales = [
+                                    {unit: 'week', step: 1, date: 'Semana %W'}
+                                ];
+                                gantt.config.min_column_width = 50;
+                                break;
+                                
+                            case 'month':
+                                gantt.config.scale_unit = 'year';
+                                gantt.config.date_scale = '%Y';
+                                gantt.config.subscales = [
+                                    {unit: 'month', step: 1, date: '%F'}
+                                ];
+                                gantt.config.min_column_width = 120;
+                                break;
+                        }
+                        
+                        gantt.render();
+                    },
+
                     initGantt() {
                         gantt.config.xml_date = "%Y-%m-%d %H:%i";
                         gantt.config.date_format = "%Y-%m-%d %H:%i";
@@ -179,13 +217,24 @@
                         gantt.config.grid_width = 380;
                         gantt.config.autosize = "y";
                         
+                        // Configuración inicial de la escala (semana por defecto)
+                        this.setScale(this.scale);
+                        
                         gantt.config.columns = [
                             {name: "text", label: "Tarea", tree: true, width: '*', min_width: 200},
                             {name: "start_date", label: "Inicio", align: "center", width: 90},
                             {name: "end_date", label: "Fin", align: "center", width: 90},
                             {name: "duration", label: "Duración", align: "center", width: 60},
                             {name: "priority", label: "Prioridad", align: "center", width: 80},
-                            {name: "progress", label: "Progreso", align: "center", width: 80}
+                            {
+                                name: "progress", 
+                                label: "Progreso", 
+                                align: "center", 
+                                width: 80,
+                                template: function(task) {
+                                    return Math.round(task.progress * 100) + "%";
+                                }
+                            }
                         ];
                         
                         gantt.init("gantt_here");
@@ -231,12 +280,13 @@
                         const task = gantt.getTask(taskId);
                         this.selectedTask = task;
                         
-                        // Formatear las fechas al formato YYYY-MM-DD que espera el input type="date"
+                        // Formatear las fechas y datos para el formulario
                         this.currentTask = {
                             ...task,
                             start_date: this.formatDateForInput(task.start_date),
                             end_date: this.formatDateForInput(task.end_date),
-                            progress: Math.round(task.progress * 100) // Convertir el progreso a porcentaje
+                            progress: Math.round(task.progress * 100), // Convertir el progreso a porcentaje
+                            priority: task.priority || 'Media' // Asegurar que siempre haya una prioridad
                         };
                         
                         this.isCreatingTask = false;
