@@ -1,4 +1,4 @@
-<div class="w-96 flex-shrink-0">
+<div class="w-80 flex-shrink-0">
     <div class="bg-white dark:bg-gray-900 rounded-lg shadow-sm p-4">
         <div v-if="selectedTask || isCreatingTask" class="task-form">
             <div class="flex justify-between items-center mb-4">
@@ -16,6 +16,7 @@
                     <input 
                         type="text" 
                         v-model="currentTask.text"
+                        @input="updateGanttTask"
                         placeholder="Nombre de la tarea"
                         class="mt-1"
                     >
@@ -25,6 +26,7 @@
                     <label class="block text-sm font-medium">Licitación</label>
                     <select 
                         v-model="currentTask.parent"
+                        @change="updateGanttTask"
                         class="mt-1"
                     >
                         <option value="">Seleccione una licitación</option>
@@ -40,6 +42,7 @@
                         <input 
                             type="date" 
                             v-model="currentTask.start_date"
+                            @input="updateGanttTask"
                             class="mt-1"
                         >
                     </div>
@@ -48,6 +51,7 @@
                         <input 
                             type="date" 
                             v-model="currentTask.end_date"
+                            @input="updateGanttTask"
                             class="mt-1"
                         >
                     </div>
@@ -58,6 +62,7 @@
                     <input 
                         type="range" 
                         v-model.number="currentTask.progress"
+                        @input="updateGanttTask"
                         min="0"
                         max="100"
                         step="10"
@@ -72,6 +77,7 @@
                     <label class="block text-sm font-medium">Prioridad</label>
                     <select 
                         v-model="currentTask.priority"
+                        @change="updateGanttTask"
                         class="mt-1 w-full"
                     >
                         <option value="Alta">Alta</option>

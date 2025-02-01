@@ -14,14 +14,10 @@
 /* Estilos del Gantt */
 .gantt_task_line {
     border-radius: 6px;
-    height: 24px !important;
-    line-height: 24px !important;
+    height: 20px !important;
     background-color: #3b82f6;
     border-color: #2563eb;
-    color: #ffffff;
-    font-weight: 600;
-    font-size: 13px;
-    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+    overflow: visible !important;
 }
 
 /* Modo Dark */
@@ -62,8 +58,8 @@
     color: #1e293b;
     font-weight: 600;
     border-bottom: 1px solid #e2e8f0;
-    height: 40px !important;
-    line-height: 40px !important;
+    height: 60px !important;
+    line-height: 60px !important;
     font-size: 13px;
     vertical-align: middle;
 }
@@ -101,6 +97,7 @@
 .gantt_row {
     border-bottom: 1px solid #e2e8f0;
     background-color: #ffffff;
+    height: 35px !important;
 }
 
 .dark .gantt_row {
@@ -145,10 +142,8 @@
 
 /* Barra de progreso */
 .gantt_task_progress {
-    background-color: #1e40af;
-    border-radius: 4px;
     height: 100%;
-    opacity: 0.8;
+    background-color: rgba(0, 0, 0, 0.2);
 }
 
 /* Modo Dark - Barra de progreso */
@@ -526,11 +521,8 @@
 /* Texto de progreso */
 .gantt_task_progress_text {
     height: 100%;
-    line-height: 24px !important;
-    color: #ffffff;
-    font-weight: 600;
-    font-size: 12px;
-    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+    line-height: 20px !important;
+    padding: 0 8px;
 }
 
 .dark .gantt_task_progress_text {
@@ -632,5 +624,89 @@
 /* Ajuste específico para el título de Gestión de Tareas */
 .dark .text-gray-900 {
     color: #ffffff !important;
+}
+
+/* Estilos para las escalas */
+.gantt_scale_line {
+    height: 30px !important;
+    line-height: 30px !important;
+    background-color: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+/* Primera línea (meses/años) */
+.gantt_scale_line:first-child {
+    border-top: none;
+}
+
+.gantt_scale_line:first-child .gantt_scale_cell {
+    font-weight: bold;
+    color: #333;
+    font-size: 13px;
+}
+
+/* Segunda línea (semanas/días) */
+.gantt_scale_line:last-child {
+    border-top: 1px solid #e2e8f0;
+}
+
+.gantt_scale_line:last-child .gantt_scale_cell {
+    font-size: 12px;
+    color: #666;
+}
+
+/* Ajustar el grid header para que coincida */
+.gantt_grid_scale {
+    height: 60px !important;
+    line-height: 60px !important;
+}
+
+/* Estilos para las subscalas */
+.gantt_scale_cell.week_scale {
+    font-size: 12px;
+    color: #666;
+}
+
+.gantt_scale_cell.month_scale {
+    font-weight: bold;
+    color: #333;
+}
+
+/* Mejorar la visibilidad de las líneas de la grilla */
+.gantt_grid_scale {
+    border-bottom: 1px solid #cecece;
+}
+
+.gantt_grid_head_cell {
+    border-right: 1px solid #cecece;
+}
+
+/* Contenido de la barra de tarea */
+.task-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 2px 8px;
+}
+
+.task-title {
+    font-weight: 600;
+    color: #ffffff;
+    font-size: 13px;
+    line-height: 20px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.task-dates {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.9);
+    line-height: 16px;
+}
+
+/* Ajustar el contenedor de la tarea */
+.gantt_task_cell {
+    height: 35px !important;
 }
 </style> 

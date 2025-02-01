@@ -176,32 +176,69 @@
                     setScale(value) {
                         this.scale = value;
                         
+                        // Configurar la altura total del encabezado
+                        gantt.config.scale_height = 60;
+
                         switch (value) {
                             case 'day':
-                                gantt.config.scale_unit = 'month';
-                                gantt.config.date_scale = '%F, %Y';
-                                gantt.config.subscales = [
-                                    {unit: 'day', step: 1, date: '%d %M'}
-                                ];
-                                gantt.config.min_column_width = 80;
-                                break;
-                                
-                            case 'week':
-                                gantt.config.scale_unit = 'month';
-                                gantt.config.date_scale = '%F, %Y';
-                                gantt.config.subscales = [
-                                    {unit: 'week', step: 1, date: 'Semana %W'}
+                                gantt.config.scales = [
+                                    {
+                                        unit: "month", 
+                                        step: 1, 
+                                        format: "%F, %Y",
+                                        css: function(date) {
+                                            return "gantt_scale_month";
+                                        }
+                                    },
+                                    {
+                                        unit: "day", 
+                                        step: 1, 
+                                        format: "%j %D",
+                                        css: function(date) {
+                                            return "gantt_scale_day";
+                                        }
+                                    }
                                 ];
                                 gantt.config.min_column_width = 50;
                                 break;
                                 
-                            case 'month':
-                                gantt.config.scale_unit = 'year';
-                                gantt.config.date_scale = '%Y';
-                                gantt.config.subscales = [
-                                    {unit: 'month', step: 1, date: '%F'}
+                            case 'week':
+                                gantt.config.scales = [
+                                    {
+                                        unit: "month", 
+                                        step: 1, 
+                                        format: "%F, %Y",
+                                        height: 30
+                                    },
+                                    {
+                                        unit: "week", 
+                                        step: 1, 
+                                        format: function(date) {
+                                            var weekNum = gantt.date.date_to_str("%W")(date);
+                                            return "Semana " + weekNum;
+                                        },
+                                        height: 30
+                                    }
                                 ];
-                                gantt.config.min_column_width = 120;
+                                gantt.config.min_column_width = 70;
+                                break;
+                                
+                            case 'month':
+                                gantt.config.scales = [
+                                    {
+                                        unit: "year", 
+                                        step: 1, 
+                                        format: "%Y",
+                                        height: 30
+                                    },
+                                    {
+                                        unit: "month", 
+                                        step: 1, 
+                                        format: "%F",
+                                        height: 30
+                                    }
+                                ];
+                                gantt.config.min_column_width = 100;
                                 break;
                         }
                         
@@ -214,17 +251,42 @@
                         gantt.config.scale_height = 60;
                         gantt.config.row_height = 35;
                         gantt.config.task_height = 20;
-                        gantt.config.grid_width = 380;
+                        gantt.config.grid_width = 400;
                         gantt.config.autosize = "y";
                         
-                        // Configuración inicial de la escala (semana por defecto)
+                        // Personalizar el estilo de las escalas
+                        gantt.templates.scale_cell_class = function(date) {
+                            return "gantt_scale_cell";
+                        };
+                        
+                        gantt.templates.scale_row_class = function(scale) {
+                            return "gantt_scale_row";
+                        };
+
+                        // Configuración inicial de la escala
                         this.setScale(this.scale);
                         
                         gantt.config.columns = [
-                            {name: "text", label: "Tarea", tree: true, width: '*', min_width: 200},
-                            {name: "start_date", label: "Inicio", align: "center", width: 90},
-                            {name: "end_date", label: "Fin", align: "center", width: 90},
-                            {name: "duration", label: "Duración", align: "center", width: 60},
+                            {name: "text", label: "Tarea", tree: true, width: 180, min_width: 150},
+                            {
+                                name: "start_date", 
+                                label: "Inicio", 
+                                align: "center", 
+                                width: 120,
+                                template: function(task) {
+                                    return gantt.date.date_to_str("%d/%m/%Y")(task.start_date);
+                                }
+                            },
+                            {
+                                name: "end_date", 
+                                label: "Fin", 
+                                align: "center", 
+                                width: 120,
+                                template: function(task) {
+                                    return gantt.date.date_to_str("%d/%m/%Y")(task.end_date);
+                                }
+                            },
+                            {name: "duration", label: "Duración", align: "center", width: 70},
                             {name: "priority", label: "Prioridad", align: "center", width: 80},
                             {
                                 name: "progress", 
@@ -238,12 +300,97 @@
                         ];
                         
                         gantt.init("gantt_here");
+                        
+                        // Forzar un rerender después de la inicialización
+                        setTimeout(() => {
+                            gantt.render();
+                        }, 100);
+                        
                         this.loadData();
 
+                        // Eventos para sincronización bidireccional
                         gantt.attachEvent("onTaskClick", (id) => {
                             this.selectTask(id);
                             return true;
                         });
+
+                        // Mantener los últimos valores válidos
+                        let lastValidValues = {
+                            text: '',
+                            start_date: null,
+                            end_date: null,
+                            progress: 0,
+                            priority: 'Media'
+                        };
+
+                        // Durante el arrastre de la tarea (solo afecta fechas)
+                        gantt.attachEvent("onTaskDrag", (id, mode, task, original) => {
+                            if (this.selectedTask && this.selectedTask.id === id) {
+                                // Solo actualizar fechas durante el arrastre
+                                this.updateSidebarTask({
+                                    start_date: task.start_date,
+                                    end_date: task.end_date
+                                });
+                            }
+                        });
+
+                        // Durante el arrastre del progreso (solo afecta progreso)
+                        gantt.attachEvent("onTaskProgressDrag", (id, progress, task) => {
+                            if (this.selectedTask && this.selectedTask.id === id) {
+                                // Evitar que el progreso afecte otras propiedades
+                                const validProgress = Math.min(Math.max(progress, 0), 1);
+                                
+                                // Actualizar solo el progreso sin tocar otras propiedades
+                                this.currentTask = {
+                                    ...this.currentTask,
+                                    progress: Math.round(validProgress * 100)
+                                };
+
+                                // Actualizar el progreso en el gantt sin modificar fechas
+                                const ganttTask = gantt.getTask(id);
+                                ganttTask.progress = validProgress;
+                                gantt.updateTask(id);
+                            }
+                        });
+
+                        // Después de soltar el progreso
+                        gantt.attachEvent("onAfterTaskUpdate", (id, task) => {
+                            if (this.selectedTask && this.selectedTask.id === id) {
+                                // Preservar las fechas originales
+                                const originalStartDate = this.currentTask.start_date;
+                                const originalEndDate = this.currentTask.end_date;
+                                
+                                // Actualizar solo si el progreso ha cambiado
+                                if (typeof task.progress === 'number' && !isNaN(task.progress)) {
+                                    this.currentTask = {
+                                        ...this.currentTask,
+                                        progress: Math.round(task.progress * 100),
+                                        start_date: originalStartDate,
+                                        end_date: originalEndDate
+                                    };
+                                }
+                            }
+                        });
+
+                        // Actualizar en cualquier cambio de la tarea
+                        gantt.attachEvent("onTaskChanged", (id, task) => {
+                            if (this.selectedTask && this.selectedTask.id === id) {
+                                this.updateSidebarTask(task);
+                            }
+                        });
+
+                        // Configurar la visualización de la barra de tarea
+                        gantt.templates.task_cell_class = function(task, date) {
+                            return "gantt_task_cell";
+                        };
+
+                        // Personalizar el renderizado de la barra de tarea
+                        gantt.templates.task_text = function(start, end, task) {
+                            return `<div class="task-content">
+                                        <div class="task-title">${task.text}</div>
+                                        <div class="task-dates">${gantt.date.date_to_str("%d %M")(start)} - ${gantt.date.date_to_str("%d %M")(end)}</div>
+                                    </div>`;
+                        };
                     },
 
                     async loadData() {
@@ -279,17 +426,18 @@
                     selectTask(taskId) {
                         const task = gantt.getTask(taskId);
                         this.selectedTask = task;
+                        this.isCreatingTask = false;
                         
-                        // Formatear las fechas y datos para el formulario
+                        // Actualizar el currentTask con todos los datos necesarios
                         this.currentTask = {
-                            ...task,
+                            text: task.text,
                             start_date: this.formatDateForInput(task.start_date),
                             end_date: this.formatDateForInput(task.end_date),
-                            progress: Math.round(task.progress * 100), // Convertir el progreso a porcentaje
-                            priority: task.priority || 'Media' // Asegurar que siempre haya una prioridad
+                            progress: Math.round(task.progress * 100),
+                            priority: task.priority || 'Media',
+                            parent: task.parent || '',
+                            type: task.type || 'task'
                         };
-                        
-                        this.isCreatingTask = false;
                     },
 
                     // Agregar este método helper para formatear las fechas
@@ -314,6 +462,91 @@
 
                     formatDate(dateStr) {
                         return new Date(dateStr).toLocaleDateString();
+                    },
+
+                    // Método para actualizar el Gantt cuando cambia el sidebar
+                    updateGanttTask() {
+                        if (this.selectedTask) {
+                            const taskId = this.selectedTask.id;
+                            const task = gantt.getTask(taskId);
+                            const updates = {};
+
+                            // Manejar progreso de forma independiente
+                            if (typeof this.currentTask.progress === 'number') {
+                                const newProgress = Math.min(Math.max(this.currentTask.progress, 0), 100) / 100;
+                                if (newProgress !== task.progress) {
+                                    updates.progress = newProgress;
+                                }
+                            }
+
+                            // Manejar otras propiedades solo si no estamos actualizando el progreso
+                            if (!('progress' in updates)) {
+                                if (this.currentTask.text !== task.text) {
+                                    updates.text = this.currentTask.text;
+                                }
+
+                                const currentStartDate = new Date(this.currentTask.start_date);
+                                const currentEndDate = new Date(this.currentTask.end_date);
+                                
+                                if (currentStartDate.getTime() !== task.start_date.getTime()) {
+                                    updates.start_date = currentStartDate;
+                                }
+                                
+                                if (currentEndDate.getTime() !== task.end_date.getTime()) {
+                                    updates.end_date = currentEndDate;
+                                }
+
+                                if (this.currentTask.priority !== task.priority) {
+                                    updates.priority = this.currentTask.priority;
+                                }
+                            }
+
+                            // Aplicar actualizaciones
+                            if (Object.keys(updates).length > 0) {
+                                Object.assign(task, updates);
+                                gantt.updateTask(taskId);
+                                gantt.render();
+                            }
+                        }
+                    },
+
+                    // Método mejorado para actualizar el sidebar
+                    updateSidebarTask(task) {
+                        this.$nextTick(() => {
+                            const currentTask = { ...this.currentTask };
+                            
+                            // Manejar progreso de forma independiente
+                            if (typeof task.progress === 'number' && !isNaN(task.progress)) {
+                                currentTask.progress = Math.round(task.progress * 100);
+                            }
+
+                            // Mantener otras propiedades solo si están presentes en la actualización
+                            if (task.text) currentTask.text = task.text;
+                            if (task.start_date) currentTask.start_date = this.formatDateForInput(task.start_date);
+                            if (task.end_date) currentTask.end_date = this.formatDateForInput(task.end_date);
+                            if (task.priority) currentTask.priority = task.priority;
+
+                            this.currentTask = currentTask;
+                        });
+                    },
+
+                    // Watch para cambios en currentTask
+                    watch: {
+                        'currentTask.text'(newVal) {
+                            this.updateGanttTask();
+                        },
+                        'currentTask.start_date'(newVal) {
+                            this.updateGanttTask();
+                        },
+                        'currentTask.end_date'(newVal) {
+                            this.updateGanttTask();
+                        },
+                        'currentTask.progress'(newVal) {
+                            this.updateGanttTask();
+                        },
+                        'currentTask.priority'(newVal) {
+                            this.updateGanttTask();
+                        }
                     }
                 }
             };
@@ -327,6 +560,48 @@
 
     @pushOnce('styles')
         <link rel="stylesheet" href="https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.css">
+        <style>
+            .gantt_container {
+                width: 100% !important;
+                min-width: 900px !important;
+                overflow-x: auto !important;
+            }
+            
+            .gantt_grid {
+                width: auto !important;
+            }
+            
+            .gantt_task {
+                width: auto !important;
+                padding-left: 20px !important;
+                padding-right: 20px !important;
+            }
+
+            /* Mejorar la visualización de las fechas */
+            .gantt_grid_data .gantt_cell {
+                padding: 0 10px !important;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            /* Ajustar el espaciado de las columnas */
+            .gantt_grid_scale .gantt_grid_head_cell {
+                padding: 0 10px !important;
+                font-weight: 600;
+            }
+
+            /* Mejorar la visualización de la barra de tareas */
+            .gantt_task_line {
+                border-radius: 3px;
+            }
+
+            /* Ajustar el tamaño del texto en las barras */
+            .gantt_task_content {
+                font-size: 12px;
+                padding: 0 6px;
+            }
+        </style>
         @include('admin::components.gantt.styles.gantt')
     @endPushOnce
 </x-admin::layouts>
