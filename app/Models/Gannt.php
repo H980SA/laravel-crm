@@ -3,24 +3,43 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Gannt extends Model
 {
+    protected $table = 'gantts';
+
     protected $fillable = [
-        'etapa',
-        'pipelineprocess',
+        'text',
         'start_date',
-        'finish_date',
+        'end_date',
+        'duration',
+        'progress',
         'priority',
-        'progreso',
-        'id_licitacion',
-        'nombre_licitacion'
+        'is_parent',
+        'parent_id',
+        'lead_id'
     ];
 
-    protected $appends = ["open"];
+    protected $casts = [
+        'start_date' => 'date',
+        'end_date' => 'date',
+        'progress' => 'float',
+        'is_parent' => 'boolean'
+    ];
 
-    public function getOpenAttribute()
+    protected $attributes = [
+        'progress' => 0,
+        'priority' => 'Media'
+    ];
+
+    public function lead(): BelongsTo
     {
-        return true;
+        return $this->belongsTo(\Webkul\Lead\Models\Lead::class);
+    }
+
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'parent_id');
     }
 } 

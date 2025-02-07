@@ -129,7 +129,60 @@ class LeadController extends Controller
                         'pipeline.stages',
                         'stage',
                         'attribute_values',
+                        'attribute_values.attribute',
+                        'attribute_values.attribute.options',
                     ])->get();
+
+                    // Procesar los valores de los atributos para cada lead
+                    foreach ($leads as $lead) {
+                        $processedAttributes = [];
+                        foreach ($lead->attribute_values as $attributeValue) {
+                            $attribute = $attributeValue->attribute;
+                            if (!$attribute) continue;
+
+                            $value = null;
+                            switch ($attribute->type) {
+                                case 'text':
+                                    $value = $attributeValue->text_value;
+                                    break;
+                                case 'boolean':
+                                    $value = $attributeValue->boolean_value;
+                                    break;
+                                case 'integer':
+                                    $value = $attributeValue->integer_value;
+                                    break;
+                                case 'float':
+                                    $value = $attributeValue->float_value;
+                                    break;
+                                case 'datetime':
+                                    $value = $attributeValue->datetime_value;
+                                    break;
+                                case 'date':
+                                    $value = $attributeValue->date_value;
+                                    break;
+                                case 'select':
+                                    if ($option = $attribute->options->where('id', $attributeValue->integer_value)->first()) {
+                                        $value = $option->name;
+                                    }
+                                    break;
+                                case 'lookup':
+                                    // Para el caso del ejecutivo comercial (lookup)
+                                    if ($attributeValue->text_value) {
+                                        $value = $attributeValue->text_value;
+                                    }
+                                    break;
+                            }
+                            
+                            if ($value !== null) {
+                                $processedAttributes[$attribute->code] = $value;
+                            }
+                        }
+                        
+                        // Log para debug
+                        \Log::info('Processed attributes for lead ' . $lead->id, $processedAttributes);
+                        
+                        $lead->processed_attributes = $processedAttributes;
+                    }
 
                     // Manually load persons relationship with organization
                     foreach ($leads as $lead) {
@@ -173,7 +226,7 @@ class LeadController extends Controller
                     );
 
                     $data[$stage->sort_order]['leads'] = [
-                        'data' => LeadResource::collection($paginator),
+                        'data' => LeadResource::collection($paginator)->additional(['processed_attributes' => true]),
                         'meta' => [
                             'current_page' => $paginator->currentPage(),
                             'from'         => $paginator->firstItem(),
@@ -258,6 +311,9 @@ class LeadController extends Controller
                 }
             }
 
+            // Crear las tareas del Gantt
+            $this->createGanttTasks($lead, $data);
+
             DB::commit();
 
             Event::dispatch('lead.create.after', $lead);
@@ -277,6 +333,97 @@ class LeadController extends Controller
             session()->flash('error', $e->getMessage());
 
             return redirect()->back()->withInput();
+        }
+    }
+
+    /**
+     * Crear las tareas del Gantt para un lead
+     */
+    private function createGanttTasks($lead, $data)
+    {
+        try {
+            // Obtener las fechas de los atributos del lead o usar valores por defecto
+            $startDate = isset($data['fecha_inicio_licitacion']) 
+                ? Carbon::parse($data['fecha_inicio_licitacion'])
+                : Carbon::now();
+            
+            $endDate = isset($data['fecha_cierre_licitacion'])
+                ? Carbon::parse($data['fecha_cierre_licitacion'])
+                : $startDate->copy()->addDays(30);
+
+            // Calcular la duración en días
+            $duration = $startDate->diffInDays($endDate) + 1;
+
+            // Crear la tarea principal (licitación)
+            $mainTask = \App\Models\Gannt::create([
+                'text' => $lead->title,
+                'start_date' => $startDate->format('Y-m-d'),
+                'end_date' => $endDate->format('Y-m-d'),
+                'duration' => $duration,
+                'progress' => 0,
+                'priority' => 'Media',
+                'is_parent' => true,
+                'lead_id' => $lead->id
+            ]);
+
+            \Log::info('Tarea principal creada:', $mainTask->toArray());
+
+            // Crear las subtareas estándar
+            $subtasks = [
+                [
+                    'text' => 'Inicio de Proyecto - ' . $lead->title,
+                    'duration' => 5,
+                    'priority' => 'Alta'
+                ],
+                [
+                    'text' => 'Planificación - ' . $lead->title,
+                    'duration' => 7,
+                    'priority' => 'Alta'
+                ],
+                [
+                    'text' => 'Ejecución - ' . $lead->title,
+                    'duration' => 10,
+                    'priority' => 'Media'
+                ],
+                [
+                    'text' => 'Control y Seguimiento - ' . $lead->title,
+                    'duration' => 5,
+                    'priority' => 'Media'
+                ],
+                [
+                    'text' => 'Cierre - ' . $lead->title,
+                    'duration' => 3,
+                    'priority' => 'Alta'
+                ]
+            ];
+
+            $currentStartDate = $startDate->copy();
+
+            foreach ($subtasks as $subtask) {
+                $subtaskEndDate = $currentStartDate->copy()->addDays($subtask['duration'] - 1);
+
+                $task = \App\Models\Gannt::create([
+                    'text' => $subtask['text'],
+                    'start_date' => $currentStartDate->format('Y-m-d'),
+                    'end_date' => $subtaskEndDate->format('Y-m-d'),
+                    'duration' => $subtask['duration'],
+                    'progress' => 0,
+                    'priority' => $subtask['priority'],
+                    'is_parent' => false,
+                    'parent_id' => $mainTask->id,
+                    'lead_id' => $lead->id
+                ]);
+
+                \Log::info('Subtarea creada:', $task->toArray());
+
+                $currentStartDate = $subtaskEndDate->copy()->addDay();
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error al crear tareas del Gantt:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
         }
     }
 

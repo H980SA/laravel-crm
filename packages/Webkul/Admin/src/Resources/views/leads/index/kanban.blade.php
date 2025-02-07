@@ -194,20 +194,34 @@
                                             @{{ element.user.name }}
                                         </div>
 
-                                        <!-- Fuente -->
-                                        <div 
-                                            v-if="element.source"
-                                            class="rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300"
-                                        >
-                                            @{{ element.source.name }}
+                                        <!-- Debug info -->
+                                        <div class="hidden">
+                                            @{{ console.log('Element:', element) }}
+                                            @{{ console.log('Processed Attributes:', element.processed_attributes) }}
                                         </div>
 
-                                        <!-- Tipo -->
+                                        <!-- Estado -->
                                         <div 
-                                            v-if="element.type"
+                                            v-if="element.processed_attributes && element.processed_attributes.estado"
                                             class="rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300"
                                         >
-                                            @{{ element.type.name }}
+                                            @{{ element.processed_attributes.estado }}
+                                        </div>
+
+                                        <!-- Ejecutivo Comercial -->
+                                        <div 
+                                            v-if="element.processed_attributes && element.processed_attributes.comercial"
+                                            class="rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300"
+                                        >
+                                            EJECUTIVO: @{{ element.processed_attributes.comercial }}
+                                        </div>
+
+                                        <!-- Etapa de Licitación -->
+                                        <div 
+                                            v-if="element.processed_attributes && element.processed_attributes.etapa_licitacion"
+                                            class="rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300"
+                                        >
+                                            @{{ element.processed_attributes.etapa_licitacion }}
                                         </div>
                                     </div>
 

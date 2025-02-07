@@ -33,6 +33,7 @@ class LeadResource extends JsonResource
             'pipeline'             => new PipelineResource($this->pipeline),
             'stage'                => new StageResource($this->stage),
             'tags'                 => TagResource::collection($this->tags),
+            'processed_attributes' => $this->processed_attributes ?? [],
         ];
     }
 }
