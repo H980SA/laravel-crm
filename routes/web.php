@@ -30,3 +30,10 @@ Route::prefix('admin')->group(function () {
         Route::get('/licitaciones', [Webkul\Admin\Http\Controllers\GanttController::class, 'getLicitaciones']);
     });
 });
+
+Route::group(['middleware' => ['web', 'auth'], 'prefix' => 'admin'], function () {
+    Route::get('contacts/persons/search', [
+        \Webkul\Admin\Http\Controllers\Contact\PersonController::class,
+        'search'
+    ])->name('admin.contacts.persons.search');
+});

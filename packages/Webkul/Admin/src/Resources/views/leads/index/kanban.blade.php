@@ -124,23 +124,19 @@
                                 {!! view_render_event('admin.leads.index.kanban.content.stage.body.card.before') !!}
 
                                 <a
-                                    class="lead-item flex cursor-pointer flex-col gap-5 rounded-md border border-gray-100 bg-gray-50 p-2 dark:border-gray-400 dark:bg-gray-400"
+                                    class="lead-item flex cursor-pointer flex-col gap-2 rounded-md border border-gray-100 bg-white p-4 shadow-sm transition-all hover:border-gray-300 dark:border-gray-800 dark:bg-gray-900"
                                     :href="'{{ route('admin.leads.view', 'replaceId') }}'.replace('replaceId', element.id)"
                                 >
-                                    {!! view_render_event('admin.leads.index.kanban.content.stage.body.card.header.before') !!}
-
-                                    <!-- Header -->
+                                    <!-- Header: Title and Status -->
                                     <div class="flex items-start justify-between">
-                                        <div class="flex items-center gap-1">
-                                            <x-admin::avatar ::name="element.person.name" />
-                                  
-                                            <div class="flex flex-col gap-0.5">
-                                                <span class="text-xs font-medium">
-                                                    @{{ element.person.name }}
-                                                </span>
+                                        <div class="flex flex-col gap-1.5 flex-grow">
+                                            <span class="text-sm font-medium text-gray-800 dark:text-white">
+                                                @{{ element.title }}
+                                            </span>
 
-                                                <span class="text-[10px] leading-normal">
-                                                    @{{ element.person.organization?.name }}
+                                            <div class="flex items-center gap-2">
+                                                <span class="text-sm font-medium text-emerald-500">
+                                                    @{{ element.formatted_lead_value }}
                                                 </span>
                                             </div>
                                         </div>
@@ -161,55 +157,72 @@
                                         </div>
                                     </div>
 
-                                    {!! view_render_event('admin.leads.index.kanban.content.stage.body.card.header.after') !!}
+                                    <!-- Personas -->
+                                    <div class="flex flex-col gap-1.5">
+                                        <template v-if="element.persons && element.persons.length">
+                                            <div 
+                                                v-for="person in element.persons"
+                                                class="flex items-center gap-2 bg-gray-50 rounded-md p-2 dark:bg-gray-800"
+                                            >
+                                                <x-admin::avatar ::name="person.name" class="w-6 h-6" />
+                                                
+                                                <div class="flex flex-col">
+                                                    <span class="text-xs font-medium text-gray-800 dark:text-white">
+                                                        @{{ person.name }}
+                                                    </span>
+                                                    <span v-if="person.organization?.name" class="text-[10px] text-gray-500">
+                                                        @{{ person.organization.name }}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </template>
+                                        <div 
+                                            v-else 
+                                            class="text-xs bg-gray-50 rounded-md p-2 dark:bg-gray-800"
+                                        >
+                                        </div>
+                                    </div>
 
-                                    {!! view_render_event('admin.leads.index.kanban.content.stage.body.card.title.before') !!}
-
-                                    <!-- Lead Title -->
-                                    <p class="text-xs font-medium">
-                                        @{{ element.title }}
-                                    </p>
-
-                                    {!! view_render_event('admin.leads.index.kanban.content.stage.body.card.title.after') !!}
-
-                                    <div class="flex flex-wrap gap-1">
+                                    <!-- Metadata -->
+                                    <div class="flex flex-wrap gap-1.5 mt-2">
+                                        <!-- Usuario asignado -->
                                         <div
-                                            class="flex items-center gap-1 rounded-xl bg-gray-200 px-2 py-1 text-xs font-medium dark:bg-gray-800 dark:text-white"
                                             v-if="element.user"
+                                            class="flex items-center gap-1.5 rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300"
                                         >
                                             <span class="icon-settings-user text-sm"></span>
-                                            
                                             @{{ element.user.name }}
                                         </div>
 
-                                        <div class="rounded-xl bg-gray-200 px-2 py-1 text-xs font-medium dark:bg-gray-800 dark:text-white">
-                                            @{{ element.formatted_lead_value }}
-                                        </div>
-
-                                        <div class="rounded-xl bg-gray-200 px-2 py-1 text-xs font-medium dark:bg-gray-800 dark:text-white">
+                                        <!-- Fuente -->
+                                        <div 
+                                            v-if="element.source"
+                                            class="rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300"
+                                        >
                                             @{{ element.source.name }}
                                         </div>
 
-                                        <div class="rounded-xl bg-gray-200 px-2 py-1 text-xs font-medium dark:bg-gray-800 dark:text-white">
+                                        <!-- Tipo -->
+                                        <div 
+                                            v-if="element.type"
+                                            class="rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300"
+                                        >
                                             @{{ element.type.name }}
                                         </div>
+                                    </div>
 
-                                        <!-- Tags -->
-                                        <template v-for="tag in element.tags">
-                                            {!! view_render_event('admin.leads.index.kanban.content.stage.body.card.tag.before') !!}
-
-                                            <div
-                                                class="rounded-xl bg-gray-200 px-2 py-1 text-xs font-medium dark:bg-gray-800"
-                                                :style="{
-                                                    backgroundColor: tag.color,
-                                                    color: tagTextColor[tag.color]
-                                                }"
-                                            >
-                                                @{{ tag.name }}
-                                            </div>
-
-                                            {!! view_render_event('admin.leads.index.kanban.content.stage.body.card.tag.after') !!}
-                                        </template>
+                                    <!-- Tags -->
+                                    <div v-if="element.tags && element.tags.length" class="flex flex-wrap gap-1.5 mt-2">
+                                        <div
+                                            v-for="tag in element.tags"
+                                            class="rounded-md px-2 py-1 text-xs font-medium"
+                                            :style="{
+                                                backgroundColor: tag.color,
+                                                color: tagTextColor[tag.color]
+                                            }"
+                                        >
+                                            @{{ tag.name }}
+                                        </div>
                                     </div>
                                 </a>
 

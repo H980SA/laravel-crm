@@ -53,16 +53,20 @@ class Lead extends Model implements LeadContract
         'title',
         'description',
         'lead_value',
+        'user_id',
         'status',
         'lost_reason',
         'expected_close_date',
         'closed_at',
-        'user_id',
         'person_id',
         'lead_source_id',
         'lead_type_id',
         'lead_pipeline_id',
         'lead_pipeline_stage_id',
+    ];
+
+    protected $attributes = [
+        'status' => 1,
     ];
 
     /**
@@ -151,6 +155,15 @@ class Lead extends Model implements LeadContract
     public function tags()
     {
         return $this->belongsToMany(TagProxy::modelClass(), 'lead_tags');
+    }
+
+    /**
+     * Get the persons associated with the lead.
+     */
+    public function persons()
+    {
+        return $this->belongsToMany(PersonProxy::modelClass(), 'lead_persons', 'lead_id', 'person_id')
+            ->withTimestamps();
     }
 
     /**

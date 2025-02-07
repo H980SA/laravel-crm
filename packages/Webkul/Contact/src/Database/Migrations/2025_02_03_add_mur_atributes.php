@@ -20,11 +20,24 @@ return new class extends Migration
             ->update([
                 'name' => 'Línea de Negocio'
             ]);
+        // cambiar tipo de valor de prospecto
+        DB::table('attributes')
+            ->where([   
+                'code' => 'lead_value',
+                'entity_type' => 'leads'
+            ])
+            ->update([
+                'type' => 'text',
+                'validation' => 'numeric',
+                'name' => 'Valor de licitación (USD)',
+                'sort_order' => 22
+            ]);
 
         // Eliminar los atributos existentes si existen
         DB::table('attributes')
             ->where('entity_type', 'leads')
             ->whereIn('code', [
+                'comercial',
                 'expected_close_date',
                 'closing_year',
                 'estado',
@@ -48,6 +61,13 @@ return new class extends Migration
 
         // Array de nuevos atributos
         $attributes = [
+            [
+                'code' => 'comercial',
+                'name' => 'EJECUTIVO COMERCIAL',
+                'type' => 'lookup',
+                'lookup_type' => 'persons',
+                'sort_order' => 7,
+            ],
             [
                 'code' => 'closing_year',
                 'name' => 'Año de Cierre',
@@ -78,7 +98,7 @@ return new class extends Migration
             ],
             [
                 'code' => 'ingresos_previstos',
-                'name' => 'Ingresos Previstos',
+                'name' => 'Ingresos Previstos para este año?',
                 'type' => 'select',
                 'validation' => NULL,
                 'sort_order' => 12,
@@ -90,39 +110,37 @@ return new class extends Migration
                 'validation' => NULL,
                 'sort_order' => 13,
             ],
-
-            [
-                'code' => 'expected_close_date_mur',
-                'name' => 'Fecha de Cierre de Licitación',
-                'type' => 'date',
-                'validation' => NULL,
-                'sort_order' => 14,
-            ],
-
             [
                 'code' => 'visita_campo',
                 'name' => 'Visita de Campo',
                 'type' => 'date',
                 'validation' => NULL,
-                'sort_order' => 15,
-            ],
-            [
-                'code' => 'presentacion_propuesta',
-                'name' => 'Presentación de Propuesta',
-                'type' => 'date',
-                'validation' => NULL,
-                'sort_order' => 16,
+                'sort_order' => 14,
             ],
             [
                 'code' => 'presentacion_consultas',
                 'name' => 'Presentación de Consultas',
                 'type' => 'date',
                 'validation' => NULL,
-                'sort_order' => 17,
+                'sort_order' => 15,
             ],
             [
                 'code' => 'absolucion_consultas',
                 'name' => 'Absolución de Consultas',
+                'type' => 'date',
+                'validation' => NULL,
+                'sort_order' => 16,
+            ],
+            [
+                'code' => 'presentacion_propuesta',
+                'name' => 'Presentación de Propuesta',
+                'type' => 'date',
+                'validation' => NULL,
+                'sort_order' => 17,
+            ],
+            [
+                'code' => 'expected_close_date_mur',
+                'name' => 'Fecha de Cierre de Licitación',
                 'type' => 'date',
                 'validation' => NULL,
                 'sort_order' => 18,
@@ -150,24 +168,24 @@ return new class extends Migration
             ],
             [
                 'code' => 'margen_bruto',
-                'name' => 'Margen Bruto',
-                'type' => 'text',
-                'validation' => 'numeric',
-                'sort_order' => 22,
-            ],
-            [
-                'code' => 'capex_estimado',
-                'name' => 'CapEX Estimado (US)',
+                'name' => 'Margen Bruto %',
                 'type' => 'text',
                 'validation' => 'numeric',
                 'sort_order' => 23,
             ],
             [
-                'code' => 'capex_financiar',
-                'name' => 'CapEX a Financiar',
+                'code' => 'capex_estimado',
+                'name' => 'CapEX Estimado (USD)',
                 'type' => 'text',
                 'validation' => 'numeric',
                 'sort_order' => 24,
+            ],
+            [
+                'code' => 'capex_financiar',
+                'name' => 'CapEX a Financiar %',
+                'type' => 'text',
+                'validation' => 'numeric',
+                'sort_order' => 25,
             ],
         ];
 
@@ -214,6 +232,7 @@ return new class extends Migration
 
         // Array de códigos de atributos a eliminar
         $attributeCodes = [
+            'comercial',
             'closing_year',
             'estado',
             'contrato_servicio',

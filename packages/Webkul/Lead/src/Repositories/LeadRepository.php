@@ -11,6 +11,7 @@ use Webkul\Attribute\Repositories\AttributeValueRepository;
 use Webkul\Contact\Repositories\PersonRepository;
 use Webkul\Core\Eloquent\Repository;
 use Webkul\Lead\Contracts\Lead;
+use Illuminate\Support\Facades\Event;
 
 class LeadRepository extends Repository
 {
@@ -75,17 +76,19 @@ class LeadRepository extends Repository
             'attribute_values',
             'pipeline',
             'stage',
+            'persons',
+            'tags',
+            'type',
+            'source',
+            'user',
+            'person',
+            'person.organization'
         ])->scopeQuery(function ($query) use ($pipelineId, $pipelineStageId, $term, $createdAtRange) {
             return $query->select(
-                'leads.id as id',
-                'leads.created_at as created_at',
-                'title',
-                'lead_value',
+                'leads.*',
                 'persons.name as person_name',
-                'leads.person_id as person_id',
                 'lead_pipelines.id as lead_pipeline_id',
-                'lead_pipeline_stages.name as status',
-                'lead_pipeline_stages.id as lead_pipeline_stage_id'
+                'lead_pipeline_stages.name as status'
             )
                 ->addSelect(DB::raw('DATEDIFF('.DB::getTablePrefix().'leads.created_at + INTERVAL lead_pipelines.rotten_days DAY, now()) as rotten_days'))
                 ->leftJoin('persons', 'leads.person_id', '=', 'persons.id')
@@ -112,36 +115,50 @@ class LeadRepository extends Repository
      */
     public function create(array $data)
     {
-        if (! empty($data['person']['id'])) {
-            $person = $this->personRepository->update(array_merge($data['person'], [
-                'entity_type' => 'persons',
-            ]), $data['person']['id']);
-        } else {
-            $person = $this->personRepository->create(array_merge($data['person'], [
-                'entity_type' => 'persons',
+        Event::dispatch('lead.create.before');
+
+        try {
+            // Remover campos que no pertenecen al modelo Lead
+            $modelData = array_intersect_key($data, array_flip([
+                'title',
+                'description',
+                'lead_value',
+                'user_id',
+                'status',
+                'lead_pipeline_id',
+                'lead_pipeline_stage_id',
+                'lead_source_id',
+                'lead_type_id',
+                'person_id',
+                'closed_at',
+                'expected_close_date',
+                'entity_type',
             ]));
+
+            // Crear el lead con solo los datos del modelo
+            $lead = parent::create($modelData);
+
+            // Preparar los datos para AttributeValueRepository
+            $attributeData = array_merge($data, [
+                'entity_type' => $data['entity_type'] ?? 'leads',
+                'entity_id' => $lead->id,
+            ]);
+
+            // Guardar los valores de atributos
+            $this->attributeValueRepository->save($attributeData);
+
+            Event::dispatch('lead.create.after', $lead);
+
+            return $lead;
+
+        } catch (\Exception $e) {
+            \Log::error('Error en LeadRepository::create', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'data' => $data
+            ]);
+            throw new \Exception('Error creating lead: ' . $e->getMessage());
         }
-
-        $lead = parent::create(array_merge([
-            'person_id'              => $person->id,
-            'lead_pipeline_id'       => 1,
-            'lead_pipeline_stage_id' => 1,
-        ], $data));
-
-        $this->attributeValueRepository->save(array_merge($data, [
-            'entity_id' => $lead->id,
-        ]));
-
-        if (isset($data['products'])) {
-            foreach ($data['products'] as $product) {
-                $this->productRepository->create(array_merge($product, [
-                    'lead_id' => $lead->id,
-                    'amount'  => $product['price'] * $product['quantity'],
-                ]));
-            }
-        }
-
-        return $lead;
     }
 
     /**

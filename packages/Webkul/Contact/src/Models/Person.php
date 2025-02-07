@@ -97,4 +97,10 @@ class Person extends Model implements PersonContract
     {
         return PersonFactory::new();
     }
+
+    public function leads()
+    {
+        return $this->belongsToMany(\Webkul\Lead\Models\LeadProxy::modelClass(), 'lead_persons')
+            ->withTimestamps();
+    }
 }

@@ -7,6 +7,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Prettus\Repository\Criteria\RequestCriteria;
 use Webkul\Admin\DataGrids\Lead\LeadDataGrid;
@@ -74,64 +75,130 @@ class LeadController extends Controller
      */
     public function get(): JsonResponse
     {
-        if (request()->query('pipeline_id')) {
-            $pipeline = $this->pipelineRepository->find(request()->query('pipeline_id'));
-        } else {
-            $pipeline = $this->pipelineRepository->getDefaultPipeline();
-        }
-
-        if ($stageId = request()->query('pipeline_stage_id')) {
-            $stages = $pipeline->stages->where('id', request()->query('pipeline_stage_id'));
-        } else {
-            $stages = $pipeline->stages;
-        }
-
-        foreach ($stages as $stage) {
-            /**
-             * We have to create a new instance of the lead repository every time, which is
-             * why we're not using the injected one.
-             */
-            $query = app(LeadRepository::class)
-                ->pushCriteria(app(RequestCriteria::class))
-                ->where([
-                    'lead_pipeline_id'       => $pipeline->id,
-                    'lead_pipeline_stage_id' => $stage->id,
-                ]);
-
-            if ($userIds = bouncer()->getAuthorizedUserIds()) {
-                $query->whereIn('leads.user_id', $userIds);
+        try {
+            if (request()->query('pipeline_id')) {
+                $pipeline = $this->pipelineRepository->find(request()->query('pipeline_id'));
+            } else {
+                $pipeline = $this->pipelineRepository->getDefaultPipeline();
             }
 
-            $stage->lead_value = (clone $query)->sum('lead_value');
+            if (!$pipeline) {
+                \Log::error('No pipeline found');
+                return response()->json(['error' => 'No pipeline found'], 500);
+            }
 
-            $data[$stage->sort_order] = (new StageResource($stage))->jsonSerialize();
+            if ($stageId = request()->query('pipeline_stage_id')) {
+                $stages = $pipeline->stages->where('id', request()->query('pipeline_stage_id'));
+            } else {
+                $stages = $pipeline->stages;
+            }
 
-            $data[$stage->sort_order]['leads'] = [
-                'data' => LeadResource::collection($paginator = $query->with([
-                    'tags',
-                    'type',
-                    'source',
-                    'user',
-                    'person',
-                    'person.organization',
-                    'pipeline',
-                    'pipeline.stages',
-                    'stage',
-                    'attribute_values',
-                ])->paginate(10)),
+            if ($stages->isEmpty()) {
+                \Log::error('No stages found for pipeline: ' . $pipeline->id);
+                return response()->json(['error' => 'No stages found'], 500);
+            }
 
-                'meta' => [
-                    'current_page' => $paginator->currentPage(),
-                    'from'         => $paginator->firstItem(),
-                    'last_page'    => $paginator->lastPage(),
-                    'per_page'     => $paginator->perPage(),
-                    'to'           => $paginator->lastItem(),
-                    'total'        => $paginator->total(),
-                ],
-            ];
+            $data = [];
+
+            foreach ($stages as $stage) {
+                try {
+                    $query = app(LeadRepository::class)
+                        ->pushCriteria(app(RequestCriteria::class))
+                        ->where([
+                            'lead_pipeline_id'       => $pipeline->id,
+                            'lead_pipeline_stage_id' => $stage->id,
+                        ]);
+
+                    if ($userIds = bouncer()->getAuthorizedUserIds()) {
+                        $query->whereIn('leads.user_id', $userIds);
+                    }
+
+                    $stage->lead_value = (clone $query)->sum('lead_value');
+
+                    $data[$stage->sort_order] = (new StageResource($stage))->jsonSerialize();
+
+                    // Get leads with eager loading
+                    $leads = $query->with([
+                        'tags',
+                        'type',
+                        'source',
+                        'user',
+                        'person',
+                        'person.organization',
+                        'pipeline',
+                        'pipeline.stages',
+                        'stage',
+                        'attribute_values',
+                    ])->get();
+
+                    // Manually load persons relationship with organization
+                    foreach ($leads as $lead) {
+                        $persons = DB::table('lead_persons')
+                            ->join('persons', 'lead_persons.person_id', '=', 'persons.id')
+                            ->leftJoin('organizations', 'persons.organization_id', '=', 'organizations.id')
+                            ->where('lead_persons.lead_id', $lead->id)
+                            ->select(
+                                'persons.*',
+                                'organizations.id as organization_id',
+                                'organizations.name as organization_name'
+                            )
+                            ->get()
+                            ->map(function($person) {
+                                if ($person->organization_id) {
+                                    $person->organization = (object)[
+                                        'id' => $person->organization_id,
+                                        'name' => $person->organization_name
+                                    ];
+                                } else {
+                                    $person->organization = null;
+                                }
+                                unset($person->organization_id);
+                                unset($person->organization_name);
+                                return $person;
+                            });
+                        
+                        $lead->setRelation('persons', $persons);
+                    }
+
+                    // Paginate the collection manually
+                    $page = request()->input('page', 1);
+                    $perPage = 10;
+                    $items = $leads->forPage($page, $perPage);
+                    
+                    $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
+                        $items,
+                        $leads->count(),
+                        $perPage,
+                        $page
+                    );
+
+                    $data[$stage->sort_order]['leads'] = [
+                        'data' => LeadResource::collection($paginator),
+                        'meta' => [
+                            'current_page' => $paginator->currentPage(),
+                            'from'         => $paginator->firstItem(),
+                            'last_page'    => $paginator->lastPage(),
+                            'per_page'     => $paginator->perPage(),
+                            'to'           => $paginator->lastItem(),
+                            'total'        => $paginator->total(),
+                        ],
+                    ];
+                } catch (\Exception $e) {
+                    \Log::error('Error processing stage ' . $stage->id . ': ' . $e->getMessage(), [
+                        'trace' => $e->getTraceAsString()
+                    ]);
+                }
+            }
+
+            return response()->json($data);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error in LeadController@get: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json(['error' => $e->getMessage()], 500);
         }
-
-        return response()->json($data);
     }
 
     /**
@@ -149,37 +216,68 @@ class LeadController extends Controller
     {
         Event::dispatch('lead.create.before');
 
-        $data = $request->all();
+        try {
+            DB::beginTransaction();
 
-        $data['status'] = 1;
+            $data = $request->all();
+            
+            // Asegurarse que persons sea un array válido y removerlo de los datos principales
+            $persons = [];
+            if (!empty($data['persons']) && is_array($data['persons'])) {
+                $persons = array_filter($data['persons']); // Eliminar valores vacíos
+            }
+            unset($data['persons']);
 
-        if (request()->input('lead_pipeline_stage_id')) {
-            $stage = $this->stageRepository->findOrFail($data['lead_pipeline_stage_id']);
+            // Asignar el usuario actual como propietario del lead
+            $data['user_id'] = auth()->id();
+            $data['status'] = 1;
 
-            $data['lead_pipeline_id'] = $stage->lead_pipeline_id;
-        } else {
-            $pipeline = $this->pipelineRepository->getDefaultPipeline();
+            if (request()->input('lead_pipeline_stage_id')) {
+                $stage = $this->stageRepository->findOrFail($data['lead_pipeline_stage_id']);
+                $data['lead_pipeline_id'] = $stage->lead_pipeline_id;
+            } else {
+                $pipeline = $this->pipelineRepository->getDefaultPipeline();
+                $stage = $pipeline->stages()->first();
+                $data['lead_pipeline_id'] = $pipeline->id;
+                $data['lead_pipeline_stage_id'] = $stage->id;
+            }
 
-            $stage = $pipeline->stages()->first();
+            if (in_array($stage->code, ['won', 'lost'])) {
+                $data['closed_at'] = Carbon::now();
+            }
 
-            $data['lead_pipeline_id'] = $pipeline->id;
+            // Crear el lead
+            $lead = $this->leadRepository->create($data);
 
-            $data['lead_pipeline_stage_id'] = $stage->id;
+            // Adjuntar las personas seleccionadas
+            if (!empty($persons)) {
+                foreach ($persons as $personId) {
+                    if (!empty($personId)) {
+                        $lead->persons()->attach($personId);
+                    }
+                }
+            }
+
+            DB::commit();
+
+            Event::dispatch('lead.create.after', $lead);
+
+            session()->flash('success', trans('admin::app.leads.create-success'));
+
+            return redirect()->route('admin.leads.index', $data['lead_pipeline_id']);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Error al crear lead:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'data' => $data ?? null
+            ]);
+
+            session()->flash('error', $e->getMessage());
+
+            return redirect()->back()->withInput();
         }
-
-        if (in_array($stage->code, ['won', 'lost'])) {
-            $data['closed_at'] = Carbon::now();
-        }
-
-        $data['person']['organization_id'] = empty($data['person']['organization_id']) ? null : $data['person']['organization_id'];
-
-        $lead = $this->leadRepository->create($data);
-
-        Event::dispatch('lead.create.after', $lead);
-
-        session()->flash('success', trans('admin::app.leads.create-success'));
-
-        return redirect()->route('admin.leads.index', $data['lead_pipeline_id']);
     }
 
     /**

@@ -13,7 +13,7 @@ use Webkul\Admin\Http\Controllers\Controller;
 use Webkul\Admin\Http\Requests\AttributeForm;
 use Webkul\Admin\Http\Requests\MassDestroyRequest;
 use Webkul\Admin\Http\Resources\PersonResource;
-use Webkul\Contact\Repositories\PersonRepository;
+use Webkul\Lead\Repositories\PersonRepository;
 
 class PersonController extends Controller
 {

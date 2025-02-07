@@ -1,131 +1,96 @@
 {!! view_render_event('admin.leads.create.contact_person.form_controls.before') !!}
 
-<v-contact-component :data="person"></v-contact-component>
+<v-contact-persons-component></v-contact-persons-component>
 
 {!! view_render_event('admin.leads.create.contact_person.form_controls.after') !!}
 
 @pushOnce('scripts')
-    <script 
-        type="text/x-template" 
-        id="v-contact-component-template"
-    >
-        <!-- Person Search lookup -->
-        <x-admin::form.control-group>
-            <x-admin::form.control-group.label class="required">
-                @lang('admin::app.leads.common.contact.name')
-            </x-admin::form.control-group.label>
-            
-            <x-admin::lookup
-                ::src="src"
-                name="person[id]"
-                ::params="params"
-                @on-selected="addPerson"
-                :placeholder="trans('admin::app.leads.common.contact.name')"
-                ::value="{id: person.id, name: person.name}"
-                :can-add-new="true"
-            />
-        
-            <x-admin::form.control-group.control
-                type="hidden"
-                name="person[name]"
-                v-model="person.name"
-                v-if="person.name"
-                rules="required"
-            />
-        
-            <x-admin::form.control-group.error control-name="person[id]" />
-        </x-admin::form.control-group>
+    <script type="text/x-template" id="v-contact-persons-component-template">
+        <div class="flex flex-col gap-2">
+            <!-- Lista de personas de contacto -->
+            <div v-for="(contact, index) in contacts" :key="index" class="flex gap-4 items-center">
+                <!-- Búsqueda de persona -->
+                <div class="flex-1">
+                    <x-admin::form.control-group>
+                        <x-admin::lookup
+                            src="{{ route('admin.contacts.persons.search') }}"
+                            v-bind:name="`persons[${index}]`"
+                            v-bind:params="{query: contact.name}"
+                            @selected="personSelected($event, index)"
+                            placeholder="@lang('admin::app.leads.common.contact.name')"
+                            v-bind:value="{id: contact.id, name: contact.name}"
+                        />
+                    </x-admin::form.control-group>
+                </div>
 
-        <!-- Person Email -->
-        <x-admin::form.control-group>
-            <x-admin::form.control-group.label class="required">
-                @lang('admin::app.leads.common.contact.email')
-            </x-admin::form.control-group.label>
+                <!-- Email de la persona -->
+                <div class="flex-1" v-if="contact.email">
+                    <span class="text-gray-600" v-text="contact.email"></span>
+                </div>
 
-            <x-admin::attributes.edit.email />
-            
-            <v-email-component
-                :attribute="{'code': 'person[emails]', 'name': 'Email'}"
-                validations="required"
-                :value="person.emails"
-            ></v-email-component>
+                <!-- Botón eliminar -->
+                <div class="flex items-center" v-if="contacts.length > 1">
+                    <button 
+                        type="button"
+                        class="text-red-600 hover:text-red-800"
+                        @click="removeContact(index)"
+                    >
+                        <span class="icon-delete text-2xl"></span>
+                    </button>
+                </div>
+            </div>
 
-        </x-admin::form.control-group>
-            
-        <!-- Person Contact Numbers -->
-        <x-admin::form.control-group>
-            <x-admin::form.control-group.label>
-                @lang('admin::app.leads.common.contact.contact-number')
-            </x-admin::form.control-group.label>
-
-            <x-admin::attributes.edit.phone />
-
-            <v-phone-component
-                :attribute="{'code': 'person[contact_numbers]', 'name': 'Contact Numbers'}"
-                :value="person.contact_numbers"
-            ></v-phone-component>
-        </x-admin::form.control-group>
-        
-        <!-- Person Organization -->
-        <x-admin::form.control-group>
-            <x-admin::form.control-group.label>
-                @lang('admin::app.leads.common.contact.organization')
-            </x-admin::form.control-group.label>
-            
-            @php
-                $organizationAttribute = app('Webkul\Attribute\Repositories\AttributeRepository')->findOneWhere([
-                    'entity_type' => 'persons',
-                    'code'        => 'organization_id'
-                ]);
-
-                $organizationAttribute->code = 'person[' . $organizationAttribute->code . ']';
-            @endphp
-
-            <x-admin::attributes.edit.lookup />
-
-            <v-lookup-component
-                :attribute='@json($organizationAttribute)'
-                :value="person.organization"
-            ></v-lookup-component>
-        </x-admin::form.control-group>
+            <!-- Botón agregar persona -->
+            <div class="flex justify-start">
+                <button 
+                    type="button"
+                    class="secondary-button"
+                    @click="addContact"
+                >
+                    @lang('admin::app.leads.common.contact.add-person')
+                </button>
+            </div>
+        </div>
     </script>
 
     <script type="module">
-        app.component('v-contact-component', {
-            template: '#v-contact-component-template',
-            
-            props: ['data'],
+        app.component('v-contact-persons-component', {
+            template: '#v-contact-persons-component-template',
 
-            data () {
+            data() {
                 return {
-                    is_searching: false,
-
-                    person: this.data ? this.data : {
-                        'name': ''
-                    },
-
-                    persons: [],
-                }
-            },
-
-            computed: {
-                src() {
-                    return "{{ route('admin.contacts.persons.search') }}";
-                },
-
-                params() {
-                    return {
-                        params: {
-                            query: this.person['name']
-                        }
-                    }
-                }
+                    contacts: [{
+                        id: null,
+                        name: '',
+                        email: ''
+                    }]
+                };
             },
 
             methods: {
-                addPerson (person) {
-                    this.person = person;
+                personSelected(person, index) {
+                    if (person && person.id) {
+                        this.contacts[index] = {
+                            id: person.id,
+                            name: person.name,
+                            email: person.emails && person.emails.length > 0 ? person.emails[0].email : ''
+                        };
+                    }
                 },
+
+                addContact() {
+                    this.contacts.push({
+                        id: null,
+                        name: '',
+                        email: ''
+                    });
+                },
+
+                removeContact(index) {
+                    if (this.contacts.length > 1) {
+                        this.contacts.splice(index, 1);
+                    }
+                }
             }
         });
     </script>

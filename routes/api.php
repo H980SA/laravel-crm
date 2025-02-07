@@ -25,4 +25,9 @@ Route::middleware(['web'])->group(function () {
         Route::get('/data', [\Webkul\Admin\Http\Controllers\GanttController::class, 'getData']);
         Route::get('/licitaciones', [\Webkul\Admin\Http\Controllers\GanttController::class, 'getLicitaciones']);
     });
+
+    Route::get('/admin/contacts/persons/search', [
+        'as' => 'admin.contacts.persons.search',
+        'uses' => 'Webkul\Admin\Http\Controllers\Contact\PersonController@search'
+    ]);
 });
