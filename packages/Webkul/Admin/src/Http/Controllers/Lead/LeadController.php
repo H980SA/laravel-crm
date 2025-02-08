@@ -342,23 +342,23 @@ class LeadController extends Controller
     private function createGanttTasks($lead, $data)
     {
         try {
-            // Obtener las fechas de los atributos del lead o usar valores por defecto
+            // Obtener las fechas de los atributos del lead
             $startDate = isset($data['fecha_inicio_licitacion']) 
                 ? Carbon::parse($data['fecha_inicio_licitacion'])
                 : Carbon::now();
             
-            $endDate = isset($data['fecha_cierre_licitacion'])
-                ? Carbon::parse($data['fecha_cierre_licitacion'])
+            $endDate = isset($data['expected_close_date_mur']) 
+                ? Carbon::parse($data['expected_close_date_mur'])
                 : $startDate->copy()->addDays(30);
 
-            // Calcular la duración en días
+            // Calcular la duración en días (incluyendo el día final)
             $duration = $startDate->diffInDays($endDate) + 1;
 
             // Crear la tarea principal (licitación)
             $mainTask = \App\Models\Gannt::create([
                 'text' => $lead->title,
                 'start_date' => $startDate->format('Y-m-d'),
-                'end_date' => $endDate->format('Y-m-d'),
+                'end_date' => $endDate->format('Y-m-d'), 
                 'duration' => $duration,
                 'progress' => 0,
                 'priority' => 'Media',
@@ -368,56 +368,55 @@ class LeadController extends Controller
 
             \Log::info('Tarea principal creada:', $mainTask->toArray());
 
-            // Crear las subtareas estándar
+            // Crear las subtareas específicas
             $subtasks = [
                 [
-                    'text' => 'Inicio de Proyecto - ' . $lead->title,
-                    'duration' => 5,
+                    'text' => 'Visita de Campo',
+                    'end_date' => $data['visita_campo'] ?? null,
                     'priority' => 'Alta'
                 ],
                 [
-                    'text' => 'Planificación - ' . $lead->title,
-                    'duration' => 7,
+                    'text' => 'Presentación de Consultas',
+                    'end_date' => $data['presentacion_consultas'] ?? null,
                     'priority' => 'Alta'
                 ],
                 [
-                    'text' => 'Ejecución - ' . $lead->title,
-                    'duration' => 10,
+                    'text' => 'Absolución de Consultas',
+                    'end_date' => $data['absolucion_consultas'] ?? null,
                     'priority' => 'Media'
                 ],
                 [
-                    'text' => 'Control y Seguimiento - ' . $lead->title,
-                    'duration' => 5,
-                    'priority' => 'Media'
-                ],
-                [
-                    'text' => 'Cierre - ' . $lead->title,
-                    'duration' => 3,
+                    'text' => 'Presentación de Propuesta',
+                    'end_date' => $data['presentacion_propuesta'] ?? null,
                     'priority' => 'Alta'
                 ]
             ];
 
-            $currentStartDate = $startDate->copy();
-
             foreach ($subtasks as $subtask) {
-                $subtaskEndDate = $currentStartDate->copy()->addDays($subtask['duration'] - 1);
+                if (!empty($subtask['end_date'])) {
+                    $taskEndDate = Carbon::parse($subtask['end_date']);
+                    
+                    // Calcular la duración desde la fecha inicial hasta la fecha de la tarea
+                    $taskDuration = $startDate->diffInDays($taskEndDate) + 1;
 
-                $task = \App\Models\Gannt::create([
-                    'text' => $subtask['text'],
-                    'start_date' => $currentStartDate->format('Y-m-d'),
-                    'end_date' => $subtaskEndDate->format('Y-m-d'),
-                    'duration' => $subtask['duration'],
-                    'progress' => 0,
-                    'priority' => $subtask['priority'],
-                    'is_parent' => false,
-                    'parent_id' => $mainTask->id,
-                    'lead_id' => $lead->id
-                ]);
-
-                \Log::info('Subtarea creada:', $task->toArray());
-
-                $currentStartDate = $subtaskEndDate->copy()->addDay();
+                    \App\Models\Gannt::create([
+                        'text' => $subtask['text'],
+                        'start_date' => $startDate->format('Y-m-d'), // Todas empiezan en la fecha inicial
+                        'end_date' => $taskEndDate->format('Y-m-d'),
+                        'duration' => $taskDuration,
+                        'progress' => 0,
+                        'priority' => $subtask['priority'],
+                        'is_parent' => false,
+                        'parent_id' => $mainTask->id,
+                        'lead_id' => $lead->id
+                    ]);
+                }
             }
+
+            \Log::info('Todas las tareas del Gantt creadas para el lead:', [
+                'lead_id' => $lead->id,
+                'main_task' => $mainTask->toArray()
+            ]);
         } catch (\Exception $e) {
             \Log::error('Error al crear tareas del Gantt:', [
                 'message' => $e->getMessage(),
